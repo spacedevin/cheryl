@@ -3,6 +3,8 @@ Cheryl 3.0
 
 Cheryl is a web based file manager for the modern web. Built on top of PHP5 and AngularJS with lots of love from HTML5 and CSS3 animations.
 
+---
+
 ### Features
 - Single file instalation
 - Ace editor for text files for direct editing an saving
@@ -23,4 +25,14 @@ Cheryl is a web based file manager for the modern web. Built on top of PHP5 and 
 5. Login with your user/pass. Default is u: **admin**, p: **password**.
 
 
+#### Older versions
+##### 1.1 - https://github.com/arzynik/osFileManager-Static
+Single file, no MySQL required
+
+##### 2.2 - https://github.com/arzynik/osFileManager
+Multiple files. Supports multiple users. Requires MySQL
+
+
+
+---
 *Made by Devin, 2003-2013*
