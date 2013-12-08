@@ -10,53 +10,55 @@ ini_set('zlib.output_compression','On');
 ini_set('zlib.output_compression_level', 9);
 
 
-$salt = 'MAKE/ME/RANDOM/PLEASE'; // password salt. make something random
-
-$defaultConfig = array(
-	// the admin username nad password to access all features. if set to blank, all users will have access to all enabled features
-	'admin' => array(
-		'username' => 'admin',
-		'password' => Cheryl::password('password', $salt), // remove the function and place a hashed password here so you dont have to save it in plain text
-	),
-	'root' => 'files', // the folder you want users to browse
-	'includes' => '', // path to look for additional libraries. leave blank if you dont know
-	'features' => array(
-		'snooping' => false, // if true, a user can browse filters behind the root directory, posibly exposing secure files. not reccomended
-		'edit' => true, // if true allows the file editor for text files
-		'folderBrowsing' => true, // if true allows basic file browsing. note if both folder and recursive are off...you cant see anything
-		'recursiveBrowsing' => true, // if true, allows a simplified view that shows all files recursivly in a directory. with lots of files this can slow it down
-		'upload' => true, // if true allows upload of files
-		'move' => true, // if true allows moving of files
-		'paste' => true, // if true allows pasing of images directly
-		'note' => true, // allow .filenote files to be created to allow some meta data about the files,
-		'readonly' => false, // overrides all features for admin to only allow view
-		'publicRead' => false // allow the public to have readonly features without loging in
-	),
-	// files to hide from view
-	'hiddenFiles' => array(
-		'.DS_Store',
-		'desktop.ini',
-		'.git',
-		'.svn',
-		'.hg',
-		'.trash',
-		'.thumb'
-	),
-	'trash' => true, // if true, deleting files will send to trash first
-	'salt' => $salt
-);
-
-if ($config) {
-	$config = array_merge($defaultConfig, $config);
-} else {
-	$config = $defaultConfig;
+if (!defined('CHERYL_SALT')) {
+	// password salt. make something random
+	define('CHERYL_SALT', 'SOMETHING/NOT/COOL/AND/RANDOM');
 }
 
-$cheryl = new Cheryl($config);
-$cheryl->request();
-
+// if this wasnt defined, then automaticly run the script asuming this is standalone
+if (!defined('CHERYL_CONTROL')) {
+	$cheryl = new Cheryl();
+	$cheryl->go();
+}
 
 class Cheryl {
+	private static $_cheryl;
+
+	private static $_template;
+
+	private $defaultConfig = array(
+		// the admin username nad password to access all features. if set to blank, all users will have access to all enabled features
+		'admin' => array(
+			'username' => 'admin',
+			'password' => '', // remove the function and place a hashed password here so you dont have to save it in plain text
+		),
+		'root' => 'files', // the folder you want users to browse
+		'includes' => '', // path to look for additional libraries. leave blank if you dont know
+		'features' => array(
+			'snooping' => false, // if true, a user can browse filters behind the root directory, posibly exposing secure files. not reccomended
+			'edit' => true, // if true allows the file editor for text files
+			'folderBrowsing' => true, // if true allows basic file browsing. note if both folder and recursive are off...you cant see anything
+			'recursiveBrowsing' => true, // if true, allows a simplified view that shows all files recursivly in a directory. with lots of files this can slow it down
+			'upload' => true, // if true allows upload of files
+			'move' => true, // if true allows moving of files
+			'paste' => true, // if true allows pasing of images directly
+			'note' => true, // allow .filenote files to be created to allow some meta data about the files,
+			'readonly' => false, // overrides all features for admin to only allow view
+			'publicRead' => false // allow the public to have readonly features without loging in
+		),
+		// files to hide from view
+		'hiddenFiles' => array(
+			'.DS_Store',
+			'desktop.ini',
+			'.git',
+			'.svn',
+			'.hg',
+			'.trash',
+			'.thumb'
+		),
+		'trash' => true, // if true, deleting files will send to trash first
+	);
+
 	public $features = array(
 		'rewrite' => false,
 		'userewrite' => null,
@@ -66,86 +68,146 @@ class Cheryl {
 		'imlib' => false,
 		'imcli' => false
 	);
+
 	public $authed = false;
 	
+
+	public static function init($config = null) {
+		if (!self::$_cheryl) {
+			new Cheryl($config);
+		}
+		return self::$_cheryl;
+	}
+	
 	public function __construct($config = null) {
-		if (is_array($config)) {
-			$this->config = json_decode(json_encode($config), false);
-		} elseif (is_object($config)) {
-			$this->config = $config;
+		if (!self::$_cheryl) {
+			self::$_cheryl = $this;
+		}
+
+		if (is_object($config)) {
+			$config = json_decode(json_encode($config), true);
+		} elseif(is_array($config)) {
+			$config = $config;
+		} else {
+			$config = array();
 		}
 		
-		$this->setup();
-		$this->authenticate();
-		$this->digestRequest();
+		$config = array_merge($this->defaultConfig, $config);
+		$config = json_decode(json_encode($config), false);
+		
+		$this->config = $config;
+
+		$this->_setup();
+		$this->_authenticate();
+		$this->_digestRequest();
 	}
 	
 	public static function script() {
 		return preg_replace('@'.DIRECTORY_SEPARATOR.'((index|default)\.(php|htm|html))$@','',$_SERVER['SCRIPT_NAME']);
 	}
 	
-	public function request() {
+	
+	public static function password($password) {
+		// just a pinch
+		return sha1($password.CHERYL_SALT);
+	}
+	
+	public static function me() {
+		return self::$_cheryl;
+	}
+	
+	public static function go() {
+		self::me()->_request();
+		if (defined('CHERYL_CONTROL')) {
+			echo self::template();
+		}
+	}
+	
+	public static function template($template = null) {
+		if ($template !== null) {
+			self::$_template = $template;
+		} else {
+			return self::$_template;
+		}
+	}
+
+	public static function iteratorFilter($current) {
+        return !in_array(
+            $current->getFileName(),
+            self::me()->config->hiddenFiles,
+            true
+        );
+	}
+
+
+	private function _request() {
 		// process authentication requests
 		switch ($this->request[0]) {
 			case 'logout':
-				$this->logout();
+				$this->_logout();
 				echo json_encode(array('status' => true, 'message' => 'logged out'));
 				exit;
 
 			case 'login':
-				$res = $this->login();
+				$res = $this->_login();
 				if ($res) {
 					echo json_encode(array('status' => true, 'message' => 'logged in'));
 				} else {
 					echo json_encode(array('status' => false, 'message' => 'failed to log in'));
 				}
 				exit;
+				
+			// get the config and authentication status
+			case 'config':
+				$this->_getConfig();
+				exit;
+				break;
 
 			// list the contents of a directory
 			case 'ls':
-				$this->requestList();
+				$this->_requestList();
 				exit;
 				break;
 			
 			// download a file
 			case 'dl':
-				$this->getFile(true);
+				$this->_getFile(true);
 				exit;
 				break;
 				
 			// upload a file
 			case 'ul':
-				$this->takeFile();
+				$this->_takeFile();
 				exit;
 				break;
 				
 			// view a file
 			case 'vw':
-				$this->getFile(false);
+				$this->_getFile(false);
 				exit;
 				break;
 				
 			// delete a file
 			case 'rm':
-				$this->deleteFile();
+				$this->_deleteFile();
 				exit;
 				break;
 				
 			// rename a file
 			case 'rn':
-				$this->renameFile();
+				$this->_renameFile();
 				exit;
 				break;
 				
 			// make a directory
 			case 'mk':
-				$this->makeFile();
+				$this->_makeFile();
 				exit;
 				break;
 
 			// save a file
 			case 'sv':
-				$this->saveFile();
+				$this->_saveFile();
 				exit;
 				break;
 				
@@ -156,7 +218,7 @@ class Cheryl {
 		}
 	}
 
-	public function setup() {
+	private function _setup() {
 		$this->features = (object)$this->features;
 
 		if (!$this->config->includes) {
@@ -219,31 +281,26 @@ class Cheryl {
 		}
 	}
 
-	public function authenticate() {
+	private function _authenticate() {
 		if (!$this->config->admin || (!$this->config->admin->username && !$this->config->admin->password)) {
 			// allow anonymouse access. ur crazy!
 			return $this->authed = true;
 		}
 
 		session_start();
-		
+
 		if ($_SESSION['cheryl-authed']) {
 			return $this->authed = true;
 		}
 	}
 	
-	public static function password($password, $salt = '') {
-		// just a pinch
-		return sha1($password.$salt);
-	}
-	
-	public function login() {
+	private function _login() {
 		if ($_REQUEST['__username']) {
 			// log in attempt
 			if ($_REQUEST['__hash']) {
 				$pass = $_REQUEST['__hash'];
 			} else {
-				$pass = self::password($_REQUEST['__password'], $this->config->salt);
+				$pass = self::password($_REQUEST['__password']);
 			}
 			if ($_REQUEST['__username'] == $this->config->admin->username && $pass == $this->config->admin->password) {
 				// successfuly send username and password
@@ -254,13 +311,13 @@ class Cheryl {
 		return false;
 	}
 	
-	public function logout() {
+	private function _logout() {
 		@session_destroy();
 		@session_regenerate_id();
 		@session_start();
 	}
 
-	public function digestRequest() {
+	private function _digestRequest() {
 		if ($_REQUEST['___url']) {
 			// we have a result from .htaccess
 			$url = explode('/',$_REQUEST['__url']);
@@ -301,16 +358,8 @@ class Cheryl {
 			$this->requestName = preg_replace('@'.DIRECTORY_SEPARATOR.'@','',$_REQUEST['_n']);	
 		}
 	}
-
-	public function iteratorFilter($current) {
-        return !in_array(
-            $current->getFileName(),
-            $this->config->hiddenFiles,
-            true
-        );
-	}
 	
-	public function getFiles($dir, $filters = array()) {
+	private function _getFiles($dir, $filters = array()) {
 		
 		if ($filters['recursive']) {
 			$iter = new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS);
@@ -320,20 +369,20 @@ class Cheryl {
 				RecursiveIteratorIterator::CATCH_GET_CHILD
 			);
 			
-			$filtered = new CherylFilterIterator($iterator, $this);
+			$filtered = new CherylFilterIterator($iterator);
 			
 			$paths = array($dir);
 			foreach ($filtered as $path => $file) {
 				if ($file->isDir()) {
-					$dirs[] = $this->getFileInfo($file);
+					$dirs[] = $this->_getFileInfo($file);
 				} elseif (!$file->isDir()) {
-					$files[] = $this->getFileInfo($file);
+					$files[] = $this->_getFileInfo($file);
 				}
 			}
 
 		} else {
 			$iter = new DirectoryIterator($dir);
-			$filter = new CherylFilterIterator($iter, $this);
+			$filter = new CherylFilterIterator($iter);
 			$iterator = new IteratorIterator($filter);
 
 			$paths = array($dir);
@@ -342,9 +391,9 @@ class Cheryl {
 					continue;
 				}
 				if ($file->isDir()) {
-					$dirs[] = $this->getFileInfo($file);
+					$dirs[] = $this->_getFileInfo($file);
 				} elseif (!$file->isDir()) {
-					$files[] = $this->getFileInfo($file);
+					$files[] = $this->_getFileInfo($file);
 				}
 			}
 		}
@@ -352,7 +401,7 @@ class Cheryl {
 		return array('dirs' => $dirs, 'files' => $files);
 	}
 	
-	public function getFileInfo($file, $extended = false) {
+	private function _getFileInfo($file, $extended = false) {
 		$fullpath = $file->getPath().DIRECTORY_SEPARATOR.$file->getBaseName();
 
 		$path = str_replace(realpath($this->config->root),'',realpath($file->getPath()));
@@ -437,7 +486,7 @@ class Cheryl {
 		return $info;
 	}
 	
-	public function getFile($download = false) {
+	private function _getFile($download = false) {
 		if (!$this->authed && !$this->config->features->publicRead) {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
@@ -510,7 +559,7 @@ class Cheryl {
 		exit;
 	}
 
-	public function requestList() {
+	private function _requestList() {
 		if (!$this->authed && !$this->config->features->publicRead) {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
@@ -524,7 +573,7 @@ class Cheryl {
 
 		if (is_file($this->requestDir)) {
 			$file = new SplFileObject($this->requestDir);
-			$info = $this->getFileInfo($file, true);
+			$info = $this->_getFileInfo($file, true);
 			echo json_encode(array('type' => 'file', 'file' => $info));
 
 		} else {
@@ -544,14 +593,14 @@ class Cheryl {
 				'name' => $name
 			);
 
-			$files = $this->getFiles($this->requestDir, array(
+			$files = $this->_getFiles($this->requestDir, array(
 				'recursive' => $_REQUEST['filters']['recursive']
 			));
 			echo json_encode(array('type' => 'dir', 'list' => $files, 'file' => $info));
 		}
 	}
 	
-	public function takeFile() {
+	private function _takeFile() {
 		if (!$this->authed) {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
@@ -563,7 +612,7 @@ class Cheryl {
 		echo json_encode(array('status' => true));
 	}
 	
-	public function deleteFile() {
+	private function _deleteFile() {
 		if (!$this->authed) {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
@@ -584,7 +633,7 @@ class Cheryl {
 		echo json_encode(array('status' => $status));
 	}
 	
-	public function renameFile() {
+	private function _renameFile() {
 		if (!$this->authed) {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
@@ -599,7 +648,7 @@ class Cheryl {
 		echo json_encode(array('status' => $status, 'name' => $this->requestName));
 	}
 	
-	public function makeFile() {
+	private function _makeFile() {
 		if (!$this->authed) {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
@@ -614,7 +663,7 @@ class Cheryl {
 		echo json_encode(array('status' => $status, 'name' => $this->requestName));
 	}
 	
-	public function saveFile() {
+	private function _saveFile() {
 		if (!$this->authed) {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
@@ -627,25 +676,24 @@ class Cheryl {
 
 		echo json_encode(array('status' => $status));
 	}
+	
+	private function _getConfig() {
+		echo json_encode(array('status' => true, 'authed' => $this->authed));
+	}
 }
 
 
 class CherylFilterIterator extends FilterIterator {
-	public function __construct($iter, $cheryl) {
-		$this->cheryl($cheryl);
-		parent::__construct($iter);
-	}
     public function accept() {
-        return $this->cheryl()->iteratorFilter($this->current());
-    }
-    public function cheryl($c = null) {
-	    if ($c) {
-		    $this->_cheryl = $c;
-	    }
-	    return $this->_cheryl;
+        return Cheryl::iteratorFilter($this->current());
     }
 }
 
+
+
+if (defined('CHERYL_CONTROL')) {
+	ob_start();
+}
 
 ?><!DOCTYPE HTML>
 <html ng-app="Cheryl">
@@ -1249,6 +1297,152 @@ button, .filter {
 	overflow: hidden
 }
 
+
+
+
+
+
+
+
+
+
+.animated {
+	-webkit-animation-fill-mode: both;
+	   -moz-animation-fill-mode: both;
+	    -ms-animation-fill-mode: both;
+	     -o-animation-fill-mode: both;
+	        animation-fill-mode: both;
+
+	-webkit-animation-duration: 1s;
+	   -moz-animation-duration: 1s;
+	    -ms-animation-duration: 1s;
+	     -o-animation-duration: 1s;
+	        animation-duration: 1s;
+}
+.welcome {
+	-webkit-animation-delay: .4s;
+	   -moz-animation-delay: .4s;
+	    -ms-animation-delay: .4s;
+	     -o-animation-delay: .4s;
+	        animation-delay: .4s;
+}
+.login-form {
+	-webkit-animation-delay: 1.1s;
+	   -moz-animation-delay: 1.1s;
+	    -ms-animation-delay: 1.1s;
+	     -o-animation-delay: 1.1s;
+	        animation-delay: 1.1s;
+}
+@-webkit-keyframes fadeIn {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+@-moz-keyframes fadeIn {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+@-ms-keyframes fadeIn {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+@-o-keyframes fadeIn {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+@keyframes fadeIn {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+@-webkit-keyframes fadeInDown {
+	0% {
+		opacity: 0;
+		-webkit-transform: translateY(-20px);
+	}
+	100% {
+		opacity: 1;
+		-webkit-transform: translateY(0);
+	}
+}
+
+@-moz-keyframes fadeInDown {
+	0% {
+		opacity: 0;
+		-moz-transform: translateY(-20px);
+	}
+	100% {
+		opacity: 1;
+		-moz-transform: translateY(0);
+	}
+}
+
+@-ms-keyframes fadeInDown {
+	0% {
+		opacity: 0;
+		-ms-transform: translateY(-20px);
+	}
+	100% {
+		opacity: 1;
+		-ms-transform: translateY(0);
+	}
+}
+
+@-o-keyframes fadeInDown {
+	0% {
+		opacity: 0;
+		-o-transform: translateY(-20px);
+	}
+	100% {
+		opacity: 1;
+		-o-transform: translateY(0);
+	}
+}
+
+@keyframes fadeInDown {
+	0% {
+		opacity: 0;
+		transform: translateY(-20px);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.fadeInDown {
+	-webkit-animation-name: fadeInDown;
+	   -moz-animation-name: fadeInDown;
+	    -ms-animation-name: fadeInDown;
+	     -o-animation-name: fadeInDown;
+	        animation-name: fadeInDown;
+}
+.fadeIn {
+	-webkit-animation-name: fadeIn;
+	   -moz-animation-name: fadeIn;
+	    -ms-animation-name: fadeIn;
+	     -o-animation-name: fadeIn;
+	        animation-name: fadeIn;
+}
+
 </style>
 
 <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
@@ -1685,16 +1879,18 @@ button, .filter {
 	<div class="login-wrap" ng-show="!authed">
 		<div class="login">
 			<form ng-submit="login()">
-				<div class="welcome">{{welcomeError || 'Welcome!'}}</div>
-				<div class="input-wrap">
-					<span class="label">Username:</span>
-					<span class="field"><input type="text" ng-model="user.username" autofocus></span>
+				<div class="welcome fadeInDown animated" ng-bind="welcome">Welcome!</div>
+				<div class="login-form fadeIn animated">
+					<div class="input-wrap">
+						<span class="label">Username:</span>
+						<span class="field"><input type="text" ng-model="user.username" autofocus></span>
+					</div>
+					<div class="input-wrap">
+						<span class="label">Password:</span>
+						<span class="field"><input type="password" ng-model="user.password"></span>
+					</div>
+					<button class="login-button" type="submit"><i class="fa fa-heart"></i>&nbsp;&nbsp;&nbsp;Login</button>
 				</div>
-				<div class="input-wrap">
-					<span class="label">Password:</span>
-					<span class="field"><input type="password" ng-model="user.password"></span>
-				</div>
-				<button class="login-button" type="submit"><i class="fa fa-heart"></i>&nbsp;&nbsp;&nbsp;Login</button>
 			</form>
 			
 			<div class="copyright-login">
@@ -1769,11 +1965,13 @@ var Cheryl =
 		$scope.yesterday.setDate($scope.yesterday.getDate() - 1);
 		
 		$scope.user = [];
+		$scope.welcomeDefault = $scope.welcome = 'Welcome!';
 		
 		$scope.types = [];
 		$scope.dates = [];
 		$scope.type = 'dir';
 		$scope.dialog = false;
+		$scope.config = false;
 		
 		$scope.path = function() {
 			return $scope.script;
@@ -1784,26 +1982,36 @@ var Cheryl =
 		};
 		
 		var password = function() {
-			return encodeURIComponent(new jsSHA($scope.user.password + '<?php echo $cheryl->config->salt; ?>', 'TEXT').getHash('SHA-1', 'HEX'));
+			return encodeURIComponent(new jsSHA($scope.user.password + '<?php echo CHERYL_SALT; ?>', 'TEXT').getHash('SHA-1', 'HEX'));
+		};
+		
+		$scope.getConfig = function() {
+			$http({method: 'GET', url: $scope.path() + '?__p=config'}).
+				success(function(data) {
+					if (data.status) {
+						$scope.authed = data.authed;
+						$scope.config = true;
+					}
+				});
 		};
 		
 		$scope.login = function() {
 			$http({method: 'POST', url: $scope.path() + '?__p=login&__username=' + $scope.user.username + '&__hash=' + password()}).
 				success(function(data) {
 					if (data.status) {
-						$scope.welcomeError = false;
+						$scope.welcome = $scope.welcomeDefault;
 						$scope.authed = true;
 						$scope.user.password = '';
 					} else {
-						$scope.welcomeError = 'Try again!';
+						$scope.welcome = 'Try again!';
 					}
 				}).
 				error(function(data) {
-					$scope.welcomeError = 'Try again!';
+					$scope.welcome = 'Try again!';
 				});	
 		};
 		
-		$scope.authed = <?php echo $cheryl->authed ? 'true' : 'false'; ?>;
+		$scope.authed = false;
 		$scope.script = '<?php echo Cheryl::script() ?>';
 		
 		$scope.dateFilterNames = {
@@ -1910,6 +2118,10 @@ var Cheryl =
 		};
 		
 		$scope.loadFiles = function() {
+			if (!$scope.config) {
+				$scope.getConfig();
+				return;
+			}
 			if (!$scope.authed) {
 				return;
 			}
@@ -2311,6 +2523,11 @@ q.value):k("inputFormat must be HEX, TEXT, ASCII, or B64");b=8*m;a=m/4-1;m<r/8?(
 
 <?
 
+if (defined('CHERYL_CONTROL')) {
+	Cheryl::template(ob_get_contents());
+	ob_end_clean();
+}
+ob_end_clean();
 return;
 
 
