@@ -699,8 +699,8 @@ if (defined('CHERYL_CONTROL')) {
 <html ng-app="Cheryl">
 <head>
 <title>Cheryl</title>
-<link rel="shortcut icon" href="/appicon.png">
-<link rel="apple-touch-icon-precomposed" href="/appicon.png">
+<link rel="shortcut icon" href="/icon.png">
+<link rel="apple-touch-icon-precomposed" href="/icon.png">
 	
 <style>
 html, body, margin, form, a, h1, h2, h3, h4, h5, h6, select, input, tr, td, table, ul, ol, li, textarea, p, button {
@@ -2169,6 +2169,18 @@ var Cheryl =
 			$scope.loadFiles();
 		});
 		
+
+		$scope.modes = {
+			php: 'php',
+			js: 'javascript',
+			css: 'css',
+			svg: 'svg',
+			xml: 'xml',
+			asp: 'asp',
+			c: 'c',
+			sql: 'mysql'
+		};
+		
 		$scope.$watch('file.contents', function() {
 			if (!$scope.file || !$scope.file.contents) {
 				return;
@@ -2190,27 +2202,17 @@ var Cheryl =
 						$scope.saveFile();
 					}
 				});
-
-				var modes = {
-					php: 'php',
-					js: 'javascript',
-					css: 'css',
-					svg: 'svg',
-					xml: 'xml',
-					asp: 'asp',
-					c: 'c',
-					sql: 'mysql'
-				};
-				var mode = 'text';
-				for (var x in modes) {
-					if (x == $scope.file.ext) {
-						mode = modes[x];
-						break;
-					}
-				}
-
-				$scope.editor.getSession().setMode('ace/mode/' + mode);
 			}
+			
+			var mode = 'text';
+			for (var x in $scope.modes) {
+				if (x == $scope.file.ext) {
+					mode = $scope.modes[x];
+					break;
+				}
+			}
+
+			$scope.editor.getSession().setMode('ace/mode/' + mode);
 
 			$scope.editor.getSession().setValue($scope.file.contents);
 			$scope.editor.setReadOnly(!$scope.file.writeable);
