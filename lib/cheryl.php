@@ -26,8 +26,6 @@ if (!defined('CHERYL_CONTROL')) {
 class Cheryl {
 	private static $_cheryl;
 
-	private static $_template;
-
 	private $defaultConfig = array(
 		// the admin username nad password to access all features. if set to blank, all users will have access to all enabled features
 		'admin' => array(
@@ -59,6 +57,10 @@ class Cheryl {
 			'.thumb'
 		),
 		'trash' => true, // if true, deleting files will send to trash first
+		'libraries' => array(
+			'type' => 'remote'
+		),
+		'recursiveDelete' => true // if true, will allow deleting of unempty folders
 	);
 
 	public $features = array(
@@ -120,17 +122,11 @@ class Cheryl {
 	
 	public static function go() {
 		self::me()->_request();
-		if (defined('CHERYL_CONTROL')) {
-			echo self::template();
-		}
+		echo self::template();
 	}
 	
-	public static function template($template = null) {
-		if ($template !== null) {
-			self::$_template = $template;
-		} else {
-			return self::$_template;
-		}
+	public static function template() {
+		return Cheryl_Template();
 	}
 
 	public static function iteratorFilter($current) {
@@ -631,9 +627,16 @@ class Cheryl {
 		$status = false;
 
 		if (is_dir($this->requestDir)) {
+			if ($this->config->recursiveDelete) {
+				foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($this->requestDir, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST) as $path) {
+					$path->isFile() ? unlink($path->getPathname()) : rmdir($path->getPathname());
+				}
+			}
+
 			if (rmdir($this->requestDir)) {
 				$status = true;
 			}
+
 		} else {
 			if (unlink($this->requestDir)) {
 				$status = true;
@@ -700,10 +703,9 @@ class CherylFilterIterator extends FilterIterator {
 }
 
 
-
-if (defined('CHERYL_CONTROL')) {
-	ob_start();
-}
+if (!function_exists('Cheryl_Template')) {
+	function Cheryl_Template() {
+		ob_start();
 
 ?><!DOCTYPE HTML>
 <html ng-app="Cheryl">
@@ -1995,11 +1997,6 @@ var Cheryl =
 		$locationProvider.html5Mode(true).hashPrefix('!');
 	})
 	.controller('RootCtrl', function ($scope, $http, $location, $anchorScroll) {
-	
-	
-	
-
-	
 		$scope.now = new Date;
 		$scope.yesterday = new Date;
 		$scope.yesterday.setDate($scope.yesterday.getDate() - 1);
@@ -2395,6 +2392,9 @@ var Cheryl =
 
 			angular.element(document).bind('dragover', function(event) {
 				clearTimeout(autoEndClean);
+				for (var x in event.dataTransfer.files) {
+					console.log(event.dataTransfer.files[x]);
+				}
 				event.preventDefault();
 				scope.$apply(function() {
 					scope.dialog = {
@@ -2593,45 +2593,10 @@ q.value):k("inputFormat must be HEX, TEXT, ASCII, or B64");b=8*m;a=m/4-1;m<r/8?(
 </script>
 </html>
 
-
-
-
-
-
-
-
 <?
 
-if (defined('CHERYL_CONTROL')) {
-	Cheryl::template(ob_get_contents());
-	ob_end_clean();
+		$res = ob_get_contents();
+		ob_end_clean();
+		return $res;
+	}
 }
-ob_end_clean();
-return;
-
-
-
-
-
-/****************************************************************/
-/* function move()                                              */
-/*                                                              */
-/* Second step in move.                                         */
-/* Moves the oldfile to the new one.                            */
-/* Recieves $file and $ndir and creates $file.$ndir             */
-/****************************************************************/
-function move($file, $ndir, $folder) {
-  global $folder;
-  if (!$file == "") {
-    maintop("Move");
-    if (rename($folder.$file, $ndir.$file)) {
-      echo $folder.$file." has been succesfully moved to ".$ndir.$file;
-    } else {
-      echo "There was an error moving ".$folder.$file;
-    }
-    mainbottom();
-  } else {
-    home();
-  }
-}
-
