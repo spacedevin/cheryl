@@ -318,10 +318,10 @@ class Cheryl {
 	}
 
 	private function _digestRequest() {
-		if (strtolower($_SERVER['REQUEST_METHOD']) == 'post') {
+		if (strtolower($_SERVER['REQUEST_METHOD']) == 'post' && !$_REQUEST['__p']) {
 			$this->request = json_decode(file_get_contents('php://input'),true);
 		} else {
-			$this->request = $_GET;
+			$this->request = $_REQUEST;
 		}
 
 		if ($this->request['__p']) {
@@ -1231,6 +1231,27 @@ button, .filter {
 	box-shadow: 0px 0px 0px 4px rgba(0,0,0,.14);
 }
 
+.modal-dropupload {
+	background: none;
+	border-radius: 10px;
+	border: 2px dashed #fff;
+	box-shadow: none;
+	width: 28em;
+	color: #fff;
+}
+
+.modal-dropupload h1 {
+	color: #fff;
+	font-size: 9em;
+	margin-top: .4em;
+	line-height: 1em;
+}
+.modal-dropupload h2 {
+	color: #fff;
+	font-size: 2em;
+	margin-bottom: 1.6em;
+}
+
 .modal button {
 	border: none;
 	padding: .45em 2em .45em 2em;
@@ -1450,7 +1471,7 @@ button, .filter {
 <link href="//fonts.googleapis.com/css?family=Open+Sans:400,300,600,700,800" rel="stylesheet">
 
 </head>
-<body ng-controller="RootCtrl" ng-class="{'modal-enabled': dialog, 'global-error': (dialog && dialog.type == 'error'), 'fullscreen-editor': fullscreenEdit}" ng-body>
+<body ng-controller="RootCtrl" ng-class="{'modal-enabled': dialog, 'global-error': (dialog && dialog.type == 'error'), 'fullscreen-editor': fullscreenEdit}" ng-body ng-drop-upload>
 	<div class="wrapper clearfix" ng-show="authed">
 		<div class="panel">
 			<a href="<?php echo Cheryl::script() ? Cheryl::script() : '/' ?>"><div class="logo">
@@ -1900,7 +1921,7 @@ button, .filter {
 		</div>
 	</div>
 	<div class="modal-wrap" ng-modal>
-		<div class="modal">
+		<div class="modal modal-{{dialog.type}}">
 			<div ng-show="dialog.type == 'makeDir'">
 				<form ng-submit="dialog.yes()">
 					<h2>Create a folder in <b>Home{{file.path ? (file.path == '/' ? '' : file.path) : ''}}{{file.path ? '/' : ''}}{{file.name}}</b>
@@ -1927,6 +1948,10 @@ button, .filter {
 				<form ng-submit="dialog=false">
 					<button ng-autofocus="dialog.type == 'error'">Close</button>
 				</form>
+			</div>
+			<div ng-show="dialog.type == 'dropupload'">
+				<h1><i class="fa fa-cloud-upload"></i></h1>
+				<h2>Drop it!</h2>
 			</div>
 		</div>
 	</div>
@@ -2175,7 +2200,6 @@ var Cheryl =
 			$scope.loadFiles();
 		});
 		
-
 		$scope.modes = {
 			php: 'php',
 			js: 'javascript',
@@ -2283,6 +2307,59 @@ var Cheryl =
 				error(error);
 			});
 		};
+		
+		$scope.upload = function(event, scope) {
+			var files = event.target.files || event.dataTransfer.files;
+
+			for (var i = 0, f; f = files[i]; i++) {
+				var xhr = new XMLHttpRequest();
+				var file = files[i];
+
+				if (xhr.upload && file.size <= 9000000000) {
+					var fd = new FormData();
+					fd.append(file.name, file);
+					
+					scope.$apply(function() {
+					
+						var upload = {
+							name: file.name,
+							path: $location.path(),
+							size: file.size,
+							uploaded: 0,
+							progress: 0,
+							status: 'uploading'
+						};
+						scope.formatSize(upload);
+						scope.uploads.push(upload);
+
+
+						xhr.upload.addEventListener('progress', function(e) {
+							scope.$apply(function() {
+								upload.uploaded = e.loaded;
+								upload.progress = parseInt(e.loaded / e.total * 100);
+							});
+						}, false);
+
+						xhr.onload = function() {
+							var status = this.status;
+							scope.$apply(function() {
+								upload.status = (status == 200 ? 'success' : 'error');
+								scope.loadFiles();
+							});
+							setTimeout(function() {
+								scope.$apply(function() {
+									scope.uploads.splice(scope.uploads.indexOf(upload), 1);
+								});
+							},5000);
+						};
+
+						xhr.open('POST', scope.path() + '/?__p=ul&_d=' + scope.dirPath(), true);
+						xhr.setRequestHeader('X-File-Name', file.name);
+						xhr.send(fd);
+					});
+				}
+			}
+		};
 	})
 	.directive('ngEnter', function() {
 		return function(scope, element, attrs) {
@@ -2296,59 +2373,35 @@ var Cheryl =
 			}
 		};
 	})
+	.directive('ngDropUpload', function () {
+		return function (scope, element) {
+	
+			var dragEnd = function(event) {
+				event.preventDefault();
+				scope.dialog = false;
+			};
+
+			angular.element(document).bind('dragover', function(event) {
+				event.preventDefault();
+				scope.$apply(function() {
+					scope.dialog = {
+						type: 'dropupload'
+					}
+				});
+			});
+
+			element
+				.bind('dragleave', dragEnd)
+				.bind('drop', function(event) {
+					dragEnd(event);
+					scope.upload(event, scope);
+				});
+		}
+	})
 	.directive('ngUploader', function($location) {
 		return function(scope, element) {
 			element.bind('change', function(event) {
-				var files = event.target.files || event.dataTransfer.files;
-
-				for (var i = 0, f; f = files[i]; i++) {
-					var xhr = new XMLHttpRequest();
-					var file = files[i];
-
-					if (xhr.upload && file.size <= 9000000000) {
-						var fd = new FormData();
-						fd.append(file.name, file);
-						
-						scope.$apply(function() {
-						
-							var upload = {
-								name: file.name,
-								path: $location.path(),
-								size: file.size,
-								uploaded: 0,
-								progress: 0,
-								status: 'uploading'
-							};
-							scope.formatSize(upload);
-							scope.uploads.push(upload);
-
-	
-							xhr.upload.addEventListener('progress', function(e) {
-								scope.$apply(function() {
-									upload.uploaded = e.loaded;
-									upload.progress = parseInt(e.loaded / e.total * 100);
-								});
-							}, false);
-
-							xhr.onload = function() {
-								var status = this.status;
-								scope.$apply(function() {
-									upload.status = (status == 200 ? 'success' : 'error');
-									scope.loadFiles();
-								});
-								setTimeout(function() {
-									scope.$apply(function() {
-										scope.uploads.splice(scope.uploads.indexOf(upload), 1);
-									});
-								},5000);
-							};
-	
-							xhr.open('POST', scope.path() + '?__p=ul&_d=' + scope.dirPath(), true);
-							xhr.setRequestHeader('X-File-Name', file.name);
-							xhr.send(fd);
-						});
-					}
-				}
+				scope.upload(event, scope);
 			});
 		};
 	})
