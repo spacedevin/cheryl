@@ -142,7 +142,7 @@ class Cheryl {
 
 	private function _request() {
 		// process authentication requests
-		switch ($this->request[0]) {
+		switch ($this->requestPath[0]) {
 			case 'logout':
 				$this->_logout();
 				echo json_encode(array('status' => true, 'message' => 'logged out'));
@@ -295,19 +295,19 @@ class Cheryl {
 	}
 	
 	private function _login() {
-		if ($_REQUEST['__username']) {
+		if ($this->request['__username']) {
 			// log in attempt
-			if ($_REQUEST['__hash']) {
-				$pass = $_REQUEST['__hash'];
+			if ($this->request['__hash']) {
+				$pass = $this->request['__hash'];
 			} else {
-				$pass = self::password($_REQUEST['__password']);
+				$pass = self::password($this->request['__password']);
 			}
-			if ($_REQUEST['__username'] == $this->config->admin->username && $pass == $this->config->admin->password) {
+
+			if ($this->request['__username'] == $this->config->admin->username && $pass == $this->config->admin->password) {
 				// successfuly send username and password
 				return $this->authed = $_SESSION['cheryl-authed'] = true;	
 			}
 		}
-		
 		return false;
 	}
 	
@@ -318,30 +318,31 @@ class Cheryl {
 	}
 
 	private function _digestRequest() {
-		if ($_REQUEST['___url']) {
-			// we have a result from .htaccess
-			$url = explode('/',$_REQUEST['__url']);
-			$this->features->userewrite = true;
+		if (strtolower($_SERVER['REQUEST_METHOD']) == 'post') {
+			$this->request = json_decode(file_get_contents('php://input'),true);
+		} else {
+			$this->request = $_GET;
+		}
 
-		} elseif ($_REQUEST['__p']) {
+		if ($this->request['__p']) {
 			// we have a page param result
-			$url = explode('/',$_REQUEST['__p']);
+			$url = explode('/',$this->request['__p']);
 			$this->features->userewrite = false;
 
 		} else {
 			$url = false;
 		}
 
-		$this->request = $url;
+		$this->requestPath = $url;
 		
 		// sanatize file/directory requests
-		if ($_REQUEST['_d']) {
-			$_REQUEST['_d'] = str_replace('/',DIRECTORY_SEPARATOR, $_REQUEST['_d']);
+		if ($this->request['_d']) {
+			$this->request['_d'] = str_replace('/',DIRECTORY_SEPARATOR, $this->request['_d']);
 			if ($this->config->features->snooping) {
 				// just allow them to enter any old damn thing
-				$this->requestDir = $this->config->root.$_REQUEST['_d'];
+				$this->requestDir = $this->config->root.$this->request['_d'];
 			} else {
-				$this->requestDir = preg_replace('/\.\.\/|\.\//i','',$_REQUEST['_d']);
+				$this->requestDir = preg_replace('/\.\.\/|\.\//i','',$this->request['_d']);
 				//$this->requestDir = preg_replace('@^'.DIRECTORY_SEPARATOR.basename(__FILE__).'@','',$this->requestDir);
 				$this->requestDir = $this->config->root.$this->requestDir;
 			}
@@ -354,8 +355,8 @@ class Cheryl {
 		}
 		
 		// sanatize filename
-		if ($_REQUEST['_n']) {
-			$this->requestName = preg_replace('@'.DIRECTORY_SEPARATOR.'@','',$_REQUEST['_n']);	
+		if ($this->request['_n']) {
+			$this->requestName = preg_replace('@'.DIRECTORY_SEPARATOR.'@','',$this->request['_n']);	
 		}
 	}
 	
@@ -594,7 +595,7 @@ class Cheryl {
 			);
 
 			$files = $this->_getFiles($this->requestDir, array(
-				'recursive' => $_REQUEST['filters']['recursive']
+				'recursive' => $this->request['filters']['recursive']
 			));
 			echo json_encode(array('type' => 'dir', 'list' => $files, 'file' => $info));
 		}
@@ -668,7 +669,7 @@ class Cheryl {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
 		}
-		if (@file_put_contents($this->requestDir,$_REQUEST['c'])) {
+		if (@file_put_contents($this->requestDir,$this->request['c'])) {
 			$status = true;
 		} else {
 			$status = false;
@@ -1960,6 +1961,11 @@ var Cheryl =
 		$locationProvider.html5Mode(true).hashPrefix('!');
 	})
 	.controller('RootCtrl', function ($scope, $http, $location, $anchorScroll) {
+	
+	
+	
+
+	
 		$scope.now = new Date;
 		$scope.yesterday = new Date;
 		$scope.yesterday.setDate($scope.yesterday.getDate() - 1);
@@ -1996,7 +2002,7 @@ var Cheryl =
 		};
 		
 		$scope.login = function() {
-			$http({method: 'POST', url: $scope.path() + '?__p=login&__username=' + $scope.user.username + '&__hash=' + password()}).
+			$http.post($scope.path() + '/', {'__p': 'login', '__username': $scope.user.username, '__hash': password()}).
 				success(function(data) {
 					if (data.status) {
 						$scope.welcome = $scope.welcomeDefault;
@@ -2174,6 +2180,7 @@ var Cheryl =
 			php: 'php',
 			js: 'javascript',
 			css: 'css',
+			md: 'markdown',
 			svg: 'svg',
 			xml: 'xml',
 			asp: 'asp',
@@ -2261,15 +2268,19 @@ var Cheryl =
 				var error = function() {
 					$scope.dialog = {type: 'error', message: 'There was an error saving the file.'};
 				};
-				$http({method: 'POST', url: $scope.path() + '?__p=sv&_d=' + $scope.dirPath() + '&c=' + encodeURIComponent($scope.editor.getSession().getValue())}).
-					success(function(data) {
-						if (data.status) {
-							$scope.dialog = false;
-						} else {
-							error();
-						}
-					}).
-					error(error);
+				$http.post($scope.path() + '/', {
+					'__p': 'sv',
+					'_d': $scope.dirPath(),
+					'c': $scope.editor.getSession().getValue()
+				}).
+				success(function(data) {
+					if (data.status) {
+						$scope.dialog = false;
+					} else {
+						error();
+					}
+				}).
+				error(error);
 			});
 		};
 	})
