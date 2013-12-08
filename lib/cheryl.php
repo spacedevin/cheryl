@@ -284,6 +284,11 @@ class Cheryl {
 				$this->features->imcli = '/usr/bin/identify';
 			}
 		}
+
+		$stat = intval(trim(shell_exec('stat -f %B '.__FILE__)));
+		if ($stat && intval(filemtime(__FILE__)) != $stat) {
+			$this->features->ctime = true;
+		}
 	}
 
 	private function _authenticate() {
@@ -407,6 +412,10 @@ class Cheryl {
 		return array('dirs' => $dirs, 'files' => $files);
 	}
 	
+	private function _cTime($file) {
+		return trim(shell_exec('stat -f %B '.$file));
+	}
+	
 	private function _getFileInfo($file, $extended = false) {
 		$fullpath = $file->getPath().DIRECTORY_SEPARATOR.$file->getBaseName();
 
@@ -423,9 +432,14 @@ class Cheryl {
 				'name' => $file->getBaseName(),
 				'size' => $file->getSize(),
 				'mtime' => $file->getMTime(),
+				'stat' => '',
 				'ext' => $file->getExtension(),
 				'writeable' => $file->isWritable()
 			);
+			
+			if ($this->features->ctime) {
+				$info['ctime'] = $this->_cTime($fullpath);
+			}
 
 			if ($extended) {
 
@@ -1826,8 +1840,8 @@ button, .filter {
 			<div class="details" ng-show="type!='dir'">
 				<h2>File info</h2>
 				<ul>
-					<li class="info">Created: {{file.dateReadable}}</li>
-					<li class="info">Modified: {{file.dateReadable}}</li>
+					<li class="info">Created: {{file.ctime*1000 | date:'medium'}}</li>
+					<li class="info">Modified: {{file.mtime*1000 | date:'medium'}}</li>
 					<li class="info">Size: {{file.sizeReadable}}</li>
 					<li class="info" ng-repeat="(key, val) in file.meta">{{key}}: <b>{{val}}</b></li>
 				</ul>
@@ -2010,6 +2024,8 @@ var Cheryl =
 		$scope.dialog = false;
 		$scope.config = false;
 		
+		$scope.dateFormat = 'm/d/Y H:i:s';
+		
 		$scope.path = function() {
 			return $scope.script;
 		};
@@ -2191,13 +2207,14 @@ var Cheryl =
 					} else {
 						formatDate($scope.file);
 						$scope.formatSize($scope.file);
+
 					}
 				}).
 				error(function() {
 					$scope.files = null;
 				});	
 		};
-		
+
 		$scope.$watch('filters.recursive', $scope.loadFiles);
 		$scope.$watch('authed', $scope.loadFiles);
 		$scope.$on('$locationChangeSuccess', $scope.loadFiles);
@@ -2532,7 +2549,7 @@ var Cheryl =
 		return function(scope, element, attrs) {
 			if (attrs.ngAutofocus) {
 				scope.$watch(attrs.ngAutofocus, function(value) {
-					setTimeout(function(){
+					setTimeout(function() {
 						element[0].focus();
 					},10);
 				});
