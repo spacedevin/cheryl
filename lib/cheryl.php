@@ -54,7 +54,8 @@ class Cheryl {
 			'.svn',
 			'.hg',
 			'.trash',
-			'.thumb'
+			'.thumb',
+			'.cherylconfig'
 		),
 		'trash' => true, // if true, deleting files will send to trash first
 		'libraries' => array(
@@ -285,7 +286,7 @@ class Cheryl {
 			}
 		}
 
-		$stat = intval(trim(shell_exec('stat -f %B '.__FILE__)));
+		$stat = intval(trim(shell_exec('stat -f %B '.escapeshellarg(__FILE__))));
 		if ($stat && intval(filemtime(__FILE__)) != $stat) {
 			$this->features->ctime = true;
 		}
@@ -413,7 +414,32 @@ class Cheryl {
 	}
 	
 	private function _cTime($file) {
-		return trim(shell_exec('stat -f %B '.$file));
+		return trim(shell_exec('stat -f %B '.escapeshellarg($file)));
+	}
+	
+	// do our own type detection
+	private function _type($file, $fullPath, $extended = false) {
+
+		$mime = mime_content_type($fullPath);
+
+		$mimes = explode('/',$mime);
+		$type = strtolower($mimes[0]);
+		$ext = strtolower($file->getExtension());
+		
+		if ($ext == 'pdf') {
+			$type = 'image';
+		}
+		
+		$ret = array(
+			'type' => $type,
+			'mime' => $mime
+		);
+		
+		if (!$extended) {
+			return $ret['type'];
+		} else {
+			return $ret;
+		}
 	}
 	
 	private function _getFileInfo($file, $extended = false) {
@@ -424,29 +450,34 @@ class Cheryl {
 			$info = array(
 				'path' => $path,
 				'name' => $file->getBaseName(),
-				'writeable' => $file->isWritable()
+				'writeable' => $file->isWritable(),
+				'type' => $this->_type($file, $fullpath, false)
 			);
+
 		} elseif (!$file->isDir()) {
 			$info = array(
 				'path' => $path,
 				'name' => $file->getBaseName(),
 				'size' => $file->getSize(),
 				'mtime' => $file->getMTime(),
-				'stat' => '',
 				'ext' => $file->getExtension(),
 				'writeable' => $file->isWritable()
 			);
-			
+
 			if ($this->features->ctime) {
 				$info['ctime'] = $this->_cTime($fullpath);
 			}
 
 			if ($extended) {
+				$type = $this->_type($file, $fullpath, true);
+				
+				$info['type'] = $type['type'];
 
-				$info['meta'] = array();
+				$info['meta'] = array(
+					'mime' => $type['mime']
+				);
 
-				$mime = mime_content_type($fullpath);
-				if (strpos($mime,'text') == 0) {
+				if ($type['type'] == 'text') {
 					$info['contents'] = file_get_contents($fullpath);
 				}
 
@@ -1861,7 +1892,7 @@ button, .filter {
 				<a href="{{path()}}{{file.path}}" class="path">{{file.path ? 'Home' + (file.path == '/' ? '' : file.path) : ''}}</a>
 			</div>
 			<div class="actions">
-				<button title="Fullscreen editor" class="fullscreen-button" ng-show="file.writeable && file.name && type!='dir'" ng-fullscreen-editor><i class="fa fa-expand"></i></button><?php
+				<button title="Fullscreen editor" class="fullscreen-button" ng-show="file.writeable && file.name && type!='dir' && file.type == 'text'" ng-fullscreen-editor><i class="fa fa-expand"></i></button><?php
 				?><button title="Save this file" class="save-button" ng-save ng-show="file.writeable && file.name && type!='dir'"><i class="fa fa-floppy-o"></i></button><?php
 				?><button title="Delete this {{type=='dir' ? 'folder' : 'file'}}" class="delete-button" ng-delete ng-show="file.writeable && file.name"><i class="fa fa-trash-o"></i></button><?php
 				?><button title="Create a new file" class="create-file-button" ng-make-file ng-show="file.writeable && type=='dir'"><i class="fa fa-file-text"></i></button><?php
