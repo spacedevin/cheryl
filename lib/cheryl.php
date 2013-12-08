@@ -2378,24 +2378,28 @@ var Cheryl =
 	.directive('ngDropUpload', function () {
 		return function (scope, element) {
 	
-			var dragEnd = function(event) {
-				event.preventDefault();
-				scope.dialog = false;
+			var dragEnd = function() {
+				scope.$apply(function() {
+					scope.dialog = false;
+				});
 			};
+			
+			var autoEndClean;
 
 			angular.element(document).bind('dragover', function(event) {
+				clearTimeout(autoEndClean);
 				event.preventDefault();
 				scope.$apply(function() {
 					scope.dialog = {
 						type: 'dropupload'
 					}
 				});
+				autoEndClean = setTimeout(dragEnd,1000);
 			});
 
 			element
-				.bind('dragleave', dragEnd)
 				.bind('drop', function(event) {
-					dragEnd(event);
+					event.preventDefault();
 					scope.upload(event, scope);
 				});
 		}
