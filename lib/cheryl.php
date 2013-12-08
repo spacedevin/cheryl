@@ -284,7 +284,7 @@ class Cheryl {
 	}
 
 	private function _authenticate() {
-		if (!$this->config->admin || (!$this->config->admin->username && !$this->config->admin->password)) {
+		if (!$this->config->admin || !$this->config->admin->username) {
 			// allow anonymouse access. ur crazy!
 			return $this->authed = true;
 		}
@@ -305,7 +305,7 @@ class Cheryl {
 				$pass = self::password($this->request['__password']);
 			}
 
-			if ($this->request['__username'] == $this->config->admin->username && $pass == $this->config->admin->password) {
+			if ($this->request['__username'] == $this->config->admin->username && (!$this->config->admin->password || $pass == $this->config->admin->password)) {
 				// successfuly send username and password
 				return $this->authed = $_SESSION['cheryl-authed'] = true;	
 			}
