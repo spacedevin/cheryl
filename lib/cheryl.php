@@ -1895,7 +1895,7 @@ button, .filter {
 				<button title="Fullscreen editor" class="fullscreen-button" ng-show="file.writeable && file.name && type!='dir' && file.type == 'text'" ng-fullscreen-editor><i class="fa fa-expand"></i></button><?php
 				?><button title="Save this file" class="save-button" ng-save ng-show="file.writeable && file.name && type!='dir' && file.type == 'text'"><i class="fa fa-floppy-o"></i></button><?php
 				?><button title="Delete this {{type=='dir' ? 'folder' : 'file'}}" class="delete-button" ng-delete ng-show="file.writeable && file.name"><i class="fa fa-trash-o"></i></button><?php
-				?><button title="Create a new file" class="create-file-button" ng-make-file ng-show="file.writeable && type=='dir'"><i class="fa fa-file-text"></i></button><?php
+				?><a href="<?php echo Cheryl::script() ? Cheryl::script() : '/' ?>/NewFile"><button title="Create a new file" class="create-file-button" ng-make-file ng-show="file.writeable && type=='dir'"><i class="fa fa-file-text"></i></button></a><?php
 				?><button title="Create a new folder" class="create-folder-button" ng-make-dir ng-show="file.writeable && type=='dir'"><i class="fa fa-folder"></i></button><?php
 				?><button title="Upload a file" class="upload-button" ng-upload ng-show="file.writeable && type=='dir'"><i class="fa fa-cloud-upload"></i></button>
 			</div>
@@ -2033,6 +2033,10 @@ var Cheryl =
 				action: 'login',
 				controller: 'LoginCtrl',
 			})
+			.when('/NewFile', {
+				action: 'newfile',
+				controller: 'RootCtrl',
+			})
 			.otherwise({
 				action: 'home',
 				controller: 'RootCtrl'
@@ -2041,7 +2045,7 @@ var Cheryl =
 	.config(function($locationProvider){
 		$locationProvider.html5Mode(true).hashPrefix('!');
 	})
-	.controller('RootCtrl', function ($scope, $http, $location, $anchorScroll) {
+	.controller('RootCtrl', function ($scope, $http, $location, $anchorScroll, $route) {
 		$scope.now = new Date;
 		$scope.yesterday = new Date;
 		$scope.yesterday.setDate($scope.yesterday.getDate() - 1);
@@ -2210,6 +2214,10 @@ var Cheryl =
 				return;
 			}
 			$scope.fullscreenEdit = false;
+			
+			if ($route.current.action == 'newfile') {
+				console.log('NEW');
+			}
 
 			var url = $scope.path() + '?__p=ls&_d=' + $scope.dirPath();
 			for (var x in $scope.filters) {
