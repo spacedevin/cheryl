@@ -1,5 +1,21 @@
 <?php
 
+/**
+ * Cheryl 3.0
+ *
+ * 2003 - 2013 Devin Smith
+ * https://github.com/arzynik/cheryl
+ *
+ * Cheryl is a web based file manager for the modern web. Built
+ * on top of PHP5 and AngularJS with lots of love from HTML5 and
+ * CSS3 animations.
+ *
+ * In intall, just copy this script to where you want to share files.
+ * See the config below for options.
+ *
+ */
+ 
+
 ignore_user_abort(false);
 set_time_limit(10);
 date_default_timezone_set('America/Los_Angeles');
