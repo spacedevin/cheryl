@@ -879,13 +879,56 @@ h1 input:focus, h2 input:focus {
 	width: 12em;
 }
 .toggles button.enabled {
-	opacity: .8;	
+	opacity: .8;
 }
 .toggles button:hover {
 	opacity: .7;	
 }
 .toggles button.enabled:hover {
 	opacity: 1;	
+}
+.toggles .search {
+	border: 0;
+	background: rgba(0,0,0,.2);
+	border-radius: 5px;
+	color: #fff;
+	font-size: 1.1em;
+	padding: .2em .4em .2em .8em;
+	opacity: .5;
+	-webkit-transition: .2s opacity;
+	float: right;
+}
+.toggles .search .fa {
+	vertical-align: middle;
+}
+.toggles .search .search-box {
+	background: 0;
+	padding: .35em .4em .45em .4em;
+	border: 0;
+	color: #fff;
+	width: 8em;
+	font-size: 1em;
+	margin: 0;
+	vertical-align: middle;
+	-webkit-transition: .2s width;
+}
+.toggles .search.active {
+	opacity: .8;
+}
+.toggles .search.active .search-box {
+	width: 15em;
+}
+.toggles .search .search-box::-webkit-input-placeholder {
+	color: #fff;
+}
+.toggles .search .search-box:-moz-placeholder {
+	color: #fff;
+}
+.toggles .search .search-box::-moz-placeholder {
+	color: #fff;
+}
+.toggles .search .search-box:-ms-input-placeholder {
+	color: #fff;
 }
 .copyright {
 	clear: both;
@@ -1060,8 +1103,6 @@ button, .filter {
 	display: inline-block;
 	margin-left: 4.1em;
 }
-
-
 
 
 @-webkit-keyframes progress-bar-stripes {
@@ -1882,6 +1923,10 @@ button, .filter {
 		<div class="toggles">
 			<button ng-class="{enabled: filters.recursive == 0}" ng-click="filter('recursive',0)">Browse</button>
 			<button ng-class="{enabled: filters.recursive == 1}" ng-click="filter('recursive',1)">Recent</button>
+			<div class="search" ng-class="{active: searchActive}">
+				<i class="fa fa-search"></i>
+				<input type="text" class="search-box" ng-model="filters.search" ng-focus="searchActive=true" ng-blur="searchActive=false" placeholder="Search">
+			</div>
 		</div>
 		<div class="content">
 			<div class="location">
@@ -2112,7 +2157,8 @@ var Cheryl =
 		$scope.filters = {
 			recursive: 0,
 			types: [],
-			dates: []
+			dates: [],
+			search: ''
 		};
 		
 		$scope.uploads = [];
@@ -2150,6 +2196,9 @@ var Cheryl =
 				if (!$scope.filters.dates[file.dateFilter]) {
 					return false;
 				}
+			}
+			if ($scope.filters.search && file.name.indexOf($scope.filters.search) === -1) {
+				return false;
 			}
 			return true;
 		};
@@ -2214,6 +2263,7 @@ var Cheryl =
 				return;
 			}
 			$scope.fullscreenEdit = false;
+			$scope.filters.search = '';
 			
 			if ($route.current.action == 'newfile') {
 				console.log('NEW');
