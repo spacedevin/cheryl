@@ -18,7 +18,7 @@ Cheryl is a web based file manager for the modern web. Built on top of PHP5 and 
 
 
 ### Install
-1. Edit any config settings you want inside of **cheryl.php**
+1. Edit any config settings you want inside of **build/Cheryl.php**
 2. Upload it somewhere. I reccomend renaming it to **index.php** and using it as your index.
 3. CHMOD the any directorys you plan to upload or edit files to **0777**.
 4. Open the path in your browser
