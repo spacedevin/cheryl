@@ -24,6 +24,7 @@ Cheryl is a web based file manager for the modern web. Built on top of PHP5 and 
 4. Open the path in your browser
 5. Login with your user/pass. Default is u: **admin**, p: **password**.
 
+*note: if you are not interested in developing for Chery, just ignore the **lib** folder.*
 
 #### Older versions
 ##### 1.1 - https://github.com/arzynik/osFileManager-Static
