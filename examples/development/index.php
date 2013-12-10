@@ -7,6 +7,10 @@
  *
  */
 
+// show errors for debugging 
+error_reporting(E_ALL ^ (E_NOTICE | E_STRICT));
+ini_set('display_errors',true);
+
 
 // if CHERYL_CONFIG is defined, the script will not automatilcy run
 define('CHERYL_CONTROL', true);
@@ -15,7 +19,7 @@ define('CHERYL_CONTROL', true);
 define('CHERYL_SALT', 'SOMETHING/NOT/COOL/AND/RANDOM');
 
 // include the Cheryl libraries
-require_once('../../build/Cheryl.php');
+require_once('../../lib/Cheryl.php');
 
 // give Cheryl our config. this will merge with the default config
 Cheryl::init(array(
