@@ -1,0 +1,559 @@
+#!/usr/bin/php
+<?php
+
+$version = '0.01';
+// be warned that this could change
+$baseRepoPath = 'git://github.com/arzynik/';
+
+(new Cana_Utility)->init();
+
+
+
+class Cana_Utility {
+	public function __construct() {
+		$this->args = new Args;
+		$this->version = $GLOBALS['version'];
+		$this->baseRepoPath = $GLOBALS['baseRepoPath'];
+		
+		$this->check();
+	}
+	
+	public function check() {
+		$versionString = "Cana PHP Object Oriented Framework - Utility version ".$this->version.".\nPlease visit http://cana.la for more information.\n\n";
+	
+		if ($this->args->flag('v') || $this->args->flag('version')) {
+			echo $versionString;
+			exit;
+		}
+
+		if (phpversion() < 5.4) {
+			$errors[] = "You don't have PHP 5.4 installed. Please upgrade your PHP and try again.\n";
+		}
+		
+		if (!$this->args->args[0] && function_exists('readline')) {
+			$this->readline = true;
+		} elseif(!$this->args->args[0] && !function_exists('readline')) {
+			$errors[] = "You dont have the readline library installed in your PHP CLI. Try 'cana help' instead.\n";
+		} else {
+			$this->readline = false;		
+		}
+
+		if (!$this->args->flag('localinstall')) {
+			@exec('git --version 2>&1',$out);
+			if (strpos($out[0],'git version') !== 0) {
+				$errors[] = "We couldn't find git. Please install git and try again.\n";
+			}
+		}
+
+		if ($errors) {
+			foreach ($errors as $error) {
+				echo $error;
+			}
+			echo "\n";
+			exit;
+		}
+		
+		if ($this->readline) {
+			echo $versionString;
+		}
+
+	}
+	
+	public function init() {
+
+		if (!$this->readline) {
+			$val = $this->processMethod($this->args->args[0]);
+			if (!$val) {
+				echo "Enter a valid command, or type 'cana help' for a list of commands.\n\n";				
+			}
+		} else {
+			echo "Enter a command to continue. Type help for a list of commands.\n\n";
+
+			while (true) {
+				$cmd = readline('cana: ');
+				readline_add_history($cmd);
+				$this->processMethod($cmd);
+			}
+		}
+
+	}
+	
+	public function processMethod($method) {
+		switch ($method) {
+			case 'util-update':
+				$this->utilUpdate();
+				break;
+			case 'app':
+				$this->app();
+				break;
+			case 'export':
+				$this->export();
+				break;
+			case 'upgrade':
+			case 'update':
+			case 'up':
+				$this->update();
+				break;
+			case 'install':
+				$this->install();
+				break;
+			case 'help':
+				$this->help();
+				break;
+			case 'exit':
+			case 'quit':
+				$this->quit();
+				break;
+			default:
+				return false;
+		}
+		return true;
+	}
+	
+	public function app() {
+		echo "Enter the path of your base cana installation.\n";
+		$path = readline('Install path: ');
+		readline_add_history($path);
+		if (!file_exists($path) || !is_dir($path)) {
+			$path = dirname(__FILE__).'/'.$path;
+		}
+
+		if (file_exists($path.'/include/config/cana.ini')) {
+			echo "Found your installation...booting...\n";
+			$config = parse_ini_file($path.'/include/config/cana.ini');
+			// update cana
+			require_once $path.'/include/config/../'.$config['pathboot'].'/'.$config['name'].'.php';
+			echo "Entering interactive app mode...\n";
+			
+			while (true) {
+				$appcmd = readline('cana/'.$config['name'].': ');
+				readline_add_history($appcmd);
+				eval($appcmd);				
+			}
+
+		} else {
+			echo 'Could not locate your cana.ini file in "'.$path.'/include/config/cana.ini"'."\n";
+		}
+	}
+
+	public function download($path, $module = '') {
+		if ($this->args->flag('localinstall')) {
+			echo "Enter the path to your cana archive.\n";
+			$archive = readline('Archive path: ');
+			readline_add_history($archive);
+			
+			if (file_exists($archive)) {
+			
+			} else {
+				echo 'The file "'.$archive.'" does not exist'."\n";
+			}
+		} else {
+			$cmds = [
+				'rm -Rf /tmp/cana',
+				'git clone --bare git://github.com/arzynik/cana'.($module ? '-'.$module : '').'.git /tmp/cana'.($module ? '-'.$module : '')
+			];
+			foreach ($cmds as $cmd) {
+				exec($cmd);
+			}
+		}
+	}
+	
+	public function quit() {
+		echo "Bye!\n\n";
+		exit;
+	}
+	
+	public function help() {
+		echo "This is the help.\n\n";
+	}
+	
+	public function findPath($path) {
+		if (file_exists($path.'/include/config/cana.ini')) {
+			return $path;
+		} else {
+			$p = explode('/',$path);
+			array_pop($p);
+			if (count($p) <= 1) {
+				return false;
+			}
+			return $this->findPath(implode(',',$p));
+		}
+	}
+	
+	public function install() {
+
+		if (!$this->readline) {
+
+			if ($this->args->args[1] && $this->args->args[1] != 'cana') {
+				$path = $this->findPath(getcwd());
+				if (!$path) {
+					echo "Couldnt find your cana path\n";
+				}
+			}
+
+		} else {
+			echo "Enter a path to install cana to.\n";
+			$path = readline('Install path: ');
+			readline_add_history($path);
+		
+			if (!file_exists($path) || !is_dir($path)) {
+				$path = dirname(__FILE__).'/'.$path;
+			}
+		
+			if (!file_exists($path)) {
+				if (!@mkdir($path)) {
+					echo "Failed to create directory!\n";
+				}
+			}
+		}
+		$c = false;
+
+		if (file_exists($path) && is_dir($path)) {
+			echo "Enter a name for your project\n";
+			$name = readline('Name: ');
+			readline_add_history($name);
+
+
+			if ($c) {
+				$cmds = [
+					'rm -Rf .cana',
+					'git clone --bare git://github.com/arzynik/cana.git .cana',
+					'rm -Rf '.escapeshellarg($path).'/.git',
+					'rm -f '.escapeshellarg($path).'/.gitignore',
+					'rm -f '.escapeshellarg($path).'/.gitconfig'
+				];
+				foreach ($cmds as $cmd) {
+					exec($cmd);
+				}
+				echo "Finished creating cana!\n\n";
+			}
+
+
+
+		} else {
+			echo "Not a valid path\n";
+		}
+
+	}
+	
+	public function update() {
+		if (!$this->readline) {
+			$path = $this->findPath(getcwd());
+			if (!$path) {
+				echo "Couldnt find your cana path\n";
+			}
+		} else {
+			echo "Enter the path of your base cana installation.\n";
+			$path = readline('Install path: ');
+			readline_add_history($path);
+			if (!file_exists($path) || !is_dir($path)) {
+				$path = dirname(__FILE__).'/'.$path;
+			}
+			
+			if (file_exists($path.'/include/config/cana.ini')) {
+				echo "Found your installation...\n";
+				$config = parse_ini_file($path.'/include/config/cana.ini');
+				// update cana
+	
+			} else {
+				echo 'Could not locate your cana.ini file in "'.$path.'/include/config/cana.ini"'."\n";
+			}
+		}
+
+		if ($path) {
+			$extensions = [];
+			if (!$this->args->args[1] || $this->args->args[1] == 'all') {
+				// update everything
+				foreach (new DirectoryIterator($path.'/include/config/') as $fileInfo) {
+					if ($fileInfo->isDot() || $fileInfo->isDir()) continue;
+
+					if (preg_match('/^cana(.*?)\.ini$/i',$fileInfo->getFilename())) {
+						$name = preg_replace('/^cana(\.?)(.*?)\.ini$/i','\\2',$fileInfo->getFilename());
+						$extensions[] = $name ? $name : 'cana';
+					}
+				}
+
+			} else {
+				$args = $this->args->args[1];
+				array_shift($args);
+				$extensions = $args;
+			}
+			$tmpBase = '/tmp/cana/';
+			$cmds = [
+				'rm -Rf '.$tmpBase,
+				'mkdir '.$tmpBase
+			];
+			foreach ($cmds as $cmd) {
+				exec($cmd);
+			}
+			$this->_updated = [];
+			foreach ($extensions as $extension) {
+				$this->updateExtension($extension, $path, $tmpBase);
+			}
+			echo "Update has completed.\n";
+		}
+	}
+	
+	
+	// update a specific extension. this could include dependencies
+	public function updateExtension($extension, $path, $tmpBase) {
+
+		// build out our config object
+		$configIni = new Ini($path.'/include/config/cana'.($extension == 'cana' ? '' : '.'.$extension).'.ini',true);
+
+		if (is_array($configIni->data())) {
+
+			$cfgs = [];
+
+			foreach ($configIni->data() as $key => $value) {
+			
+				if ($value['ignoreupdate'] && !$this->args->flag('f') && !$this->args->flag('force')) {
+					echo "Skipping over ".$key." due to ignoreupdate being set. You can bypass this by using the -f or --force flag.\n";
+					continue;
+				}
+
+				// if we have already updated it, ignore it.
+				// 	this will happen if you have multiple extensions with the same requirements
+				if ($this->_updated[$key])
+					continue;
+				
+				// if the module doesnt start with cana, its not correct
+				if (strpos($key,'cana') !== 0)
+					continue;
+
+				$pkg = $this->baseRepoPath.$key.'.git';
+				$tmpDir = $tmpBase.$key;
+
+				exec('git clone '.$pkg.' '.$tmpDir, $out);
+				
+				// if there was an error, keep going...or something
+				if (strpos(implode("\n",$out),'fatal:') !== false) {
+					echo "There was an error retrieving ".$pkg." from github \n";
+					continue;
+				}
+				
+				// set this package as updated so we dont do it again
+				$this->_updated[$key] = true;
+
+				$pkgIni = new Ini($tmpDir.'/package.ini');			
+				$cfgs[$key] = $pkgIni;
+
+				$installPath = $path.'/include/library/';
+				$readPath = $tmpDir.($pkgIni->data()['relpath'] ? '/'.$pkgIni->data()['relpath'] : '').'/';
+				
+				foreach ($pkgIni->data()['files'] as $file) {
+					$p = explode('/',$installPath.$file);
+					array_pop($p);
+					exec('mkdir -p '.implode('/',$p));
+					exec('cp -r '.$readPath.'/'.$file.' '.$installPath.$file);
+//					echo 'Copied '.$readPath.'/'.$file.' to '.$installPath.$file."\n";
+				}
+				
+				array_unset($pkgIni->_data,'relpath');				
+				exec('rm -Rf '.$tmpDir);
+
+			}
+
+			if (count($cfgs)) {
+				foreach ($cfgs as $key => $cfg) {
+					$configIni->data()[$key] = $cfg->data();
+				}
+				$configIni->write();
+			}
+		}
+	}
+
+	public function export() {
+		if (!$this->readline) {
+			$path = $this->findPath(getcwd());
+			if (!$path) {
+				echo "Couldnt find your cana path\n";
+			} else {
+			
+				$args = $this->args->args;
+				array_shift($args);
+
+				$tot = $args[count($args)-1];
+				if (is_dir($tot)) {
+					$to = array_pop($args);
+				}
+			
+				$extensions = [];
+				if (!$args[0] || $args == 'all') {
+					// update everything
+					foreach (new DirectoryIterator($path.'/include/config/') as $fileInfo) {
+						if ($fileInfo->isDot() || $fileInfo->isDir()) continue;
+	
+						if (preg_match('/^cana(.*?)\.ini$/i',$fileInfo->getFilename())) {
+							$name = preg_replace('/^cana(\.?)(.*?)\.ini$/i','\\2',$fileInfo->getFilename());
+							$extensions[] = $name ? $name : 'cana';
+						}
+					}
+	
+				} else {
+
+					$extensions = $args;
+				}
+				
+				print_r($extensions);
+
+			
+
+				foreach ($extensions as $arg) {
+					$this->exportPackage($path, '/include/config/cana'.($arg != 'cana' ? '.'.$arg : '').'.ini', $to);
+				}
+			}
+		}
+	}
+	
+	public function exportPackage($path, $package, $dst) {
+		if (file_exists($path.$package)) {
+			$config = parse_ini_file($path.$package, true);
+
+			$toit = (!$dst && $config['config']['exportpath']) ? $config['config']['exportpath'] : $dst;
+
+			foreach ($config as $key => $value) {
+
+				// nothing to do if we dont have files
+				if (!$value['files'])
+					continue;
+	
+				foreach ($value['files'] as $file) {
+					$p = explode('/',$toit.'/'.$file);
+					array_pop($p);
+					exec('mkdir -p '.implode('/',$p));
+					exec('cp -r '.$path.'/include/library/'.$file.' '.$toit.'/'.$file);
+				}
+			
+			}
+
+		}
+	}
+}
+
+
+class Ini {
+	public function __construct($string, $hasSections = false) {
+		if (file_exists($string)) {
+			$this->_content = file_get_contents($string);
+			$this->_file = $string;
+		} else {
+			$this->_content = $string;
+		}
+		$this->_hasSections = $hasSections;
+		$this->_data = $this->_content ? parse_ini_string($this->_content, $hasSections) : [];
+	}
+	
+	public function &data() {
+		return $this->_data;
+	}
+	
+	public function newData($data = null) {
+		if (!is_null($data)) {
+			$this->_data = $data;
+		}
+		
+		$content = '';
+		if ($this->_hasSections) {
+			foreach ($this->_data as $key => $elem) {
+				$content .= "[".$key."]\n";
+				foreach ($elem as $key2 => $elem2) {
+					if (is_array($elem2)) {
+						for ($i = 0; $i < count($elem2); $i++) {
+							$content .= $key2."[] = \"".$elem2[$i]."\"\n";
+						}
+					} elseif($elem2 == '') {
+						$content .= $key2." = \n";
+					} else {
+						$content .= $key2." = \"".$elem2."\"\n";
+					}
+				}
+				$content .= "\n";
+			}
+		} else {
+			foreach ($this->_data as $key => $elem) {
+				if(is_array($elem)) {
+					for($i = 0; $i < count($elem); $i++) {
+						$content .= $key2."[] = \"".$elem[$i]."\"\n";
+					}
+				} elseif ($elem == '') {
+					$content .= $key2." = \n";
+				} else {
+					$content .= $key2." = \"".$elem."\"\n";
+				}
+			}
+		}
+		return $content;
+	}
+	
+	public function write($path = null, $data = null) {
+		if ($path) {
+			$this->_file = $path;
+		}
+		$newData = $this->newData($data);
+
+		if ($this->_file) {
+			file_put_contents($this->_file, $newData);
+			return true;
+		} else {
+			return $newData;
+		}
+	}
+}
+
+function array_unset(&$array, $key) {
+	$offset = array_search($key, array_keys($array));
+	return array_splice($array, $offset, 1);
+}
+
+
+class Args {
+	private $flags;
+	public $args;
+
+	public function __construct() {
+		$this->flags = [];
+		$this->args  = [];
+
+		$argv = $GLOBALS['argv'];
+		array_shift($argv);
+
+		for ($i = 0; $i < count($argv); $i++) {
+			$str = $argv[$i];
+
+			// --foo
+			if (strlen($str) > 2 && substr($str, 0, 2) == '--') {
+				$str = substr($str, 2);
+				$parts = explode('=', $str);
+				$this->flags[$parts[0]] = true;
+
+				// Does not have an =, so choose the next arg as its value
+				if (count($parts) == 1 && isset($argv[$i + 1]) && preg_match('/^--?.+/', $argv[$i + 1]) == 0) {
+					$this->flags[$parts[0]] = $argv[$i + 1];
+				} elseif (count($parts) == 2) {
+					$this->flags[$parts[0]] = $parts[1];
+				}
+			} elseif (strlen($str) == 2 && $str[0] == '-') {
+				$this->flags[$str[1]] = true;
+				if (isset($argv[$i + 1]) && preg_match('/^--?.+/', $argv[$i + 1]) == 0)
+					$this->flags[$str[1]] = $argv[$i + 1];
+			} elseif (strlen($str) > 1 && $str[0] == '-') {
+				for ($j = 1; $j < strlen($str); $j++)
+					$this->flags[$str[$j]] = true;
+			}
+		}
+
+		for ($i = count($argv) - 1; $i >= 0; $i--) {
+			if (preg_match('/^--?.+/', $argv[$i]) == 0)
+				$this->args[] = $argv[$i];
+			else
+				break;
+		}
+
+		$this->args = array_reverse($this->args);
+	}
+
+	public function flag($name) {
+		return isset($this->flags[$name]) ? $this->flags[$name] : false;
+	}
+}
