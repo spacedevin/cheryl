@@ -436,6 +436,11 @@ class Cheryl {
 		return trim(shell_exec('stat -f %B '.escapeshellarg($file)));
 	}
 	
+	private function _fileExtension($file, $fullPath) {
+		// return strtolower($file->getExtension());
+		return strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+	}
+	
 	// do our own type detection
 	private function _type($file, $fullPath, $extended = false) {
 
@@ -443,8 +448,8 @@ class Cheryl {
 
 		$mimes = explode('/',$mime);
 		$type = strtolower($mimes[0]);
-		$ext = strtolower($file->getExtension());
-		
+		$ext = $this->_fileExtension($file, $fullPath);
+
 		if ($ext == 'pdf') {
 			$type = 'image';
 		}
@@ -479,7 +484,7 @@ class Cheryl {
 				'name' => $file->getBaseName(),
 				'size' => $file->getSize(),
 				'mtime' => $file->getMTime(),
-				'ext' => $file->getExtension(),
+				'ext' => $this->_fileExtension($file, $fullpath),
 				'writeable' => $file->isWritable()
 			);
 
@@ -2102,7 +2107,7 @@ button, .filter {
 				<button title="Fullscreen editor" class="fullscreen-button" ng-show="file.writeable && file.name && type!='dir' && file.type == 'text'" ng-fullscreen-editor><i class="fa fa-expand"></i></button><?php
 				?><button title="Save this file" class="save-button" ng-save ng-show="file.writeable && file.name && type!='dir' && file.type == 'text'"><i class="fa fa-floppy-o"></i></button><?php
 				?><button title="Delete this {{type=='dir' ? 'folder' : 'file'}}" class="delete-button" ng-delete ng-show="file.writeable && file.name"><i class="fa fa-trash-o"></i></button><?php
-				?><a href="<?php echo Cheryl::script() ? Cheryl::script() : '/' ?>/NewFile"><button title="Create a new file" class="create-file-button" ng-make-file ng-show="file.writeable && type=='dir'"><i class="fa fa-file-text"></i></button></a><?php
+				?><a href="#NewFile"><button title="Create a new file" class="create-file-button" ng-make-file ng-show="file.writeable && type=='dir'"><i class="fa fa-file-text"></i></button></a><?php
 				?><button title="Create a new folder" class="create-folder-button" ng-make-dir ng-show="file.writeable && type=='dir'"><i class="fa fa-folder"></i></button><?php
 				?><button title="Upload a file" class="upload-button" ng-upload ng-show="file.writeable && type=='dir'"><i class="fa fa-cloud-upload"></i></button>
 			</div>
@@ -2256,10 +2261,6 @@ var Cheryl =
 			.when('/login', {
 				action: 'login',
 				controller: 'LoginCtrl',
-			})
-			.when('/NewFile', {
-				action: 'newfile',
-				controller: 'RootCtrl',
 			})
 			.otherwise({
 				action: 'home',
@@ -2450,10 +2451,6 @@ var Cheryl =
 			}
 			$scope.fullscreenEdit = false;
 			$scope.filters.search = '';
-			
-			if ($route.current.action == 'newfile') {
-				console.log('NEW');
-			}
 
 			var url = $scope.path() + '?__p=ls&_d=' + $scope.dirPath();
 			for (var x in $scope.filters) {
@@ -2492,10 +2489,17 @@ var Cheryl =
 
 		$scope.$watch('filters.recursive', $scope.loadFiles);
 		$scope.$watch('authed', $scope.loadFiles);
-		$scope.$on('$locationChangeSuccess', $scope.loadFiles);
 		$scope.$on('$locationChangeSuccess', function() {
 			$anchorScroll();
-			$scope.loadFiles();
+			
+			switch ($location.$$hash) {
+				case 'NewFile':
+					break;
+
+				default:
+					$scope.loadFiles();
+					break;
+			}
 		});
 		
 		$scope.modes = {
