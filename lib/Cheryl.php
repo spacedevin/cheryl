@@ -387,7 +387,7 @@ class Cheryl {
 	private function _getFiles($dir, $filters = array()) {
 		
 		if ($filters['recursive']) {
-			$iter = new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS);
+			$iter = new RecursiveDirectoryIterator($dir);
 			$iterator = new RecursiveIteratorIterator(
 				$iter,
 				RecursiveIteratorIterator::SELF_FIRST,
@@ -398,6 +398,9 @@ class Cheryl {
 			
 			$paths = array($dir);
 			foreach ($filtered as $path => $file) {
+				if ($file->isDot()) {
+					continue;
+				}
 				if ($file->isDir()) {
 					$dirs[] = $this->_getFileInfo($file);
 				} elseif (!$file->isDir()) {
@@ -695,7 +698,10 @@ class Cheryl {
 
 		if (is_dir($this->requestDir)) {
 			if ($this->config->recursiveDelete) {
-				foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($this->requestDir, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST) as $path) {
+				foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($this->requestDir), RecursiveIteratorIterator::CHILD_FIRST) as $path) {
+					if ($path->isDot()) {
+						continue;
+					}
 					$path->isFile() ? unlink($path->getPathname()) : rmdir($path->getPathname());
 				}
 			}
