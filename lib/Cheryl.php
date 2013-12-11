@@ -398,7 +398,7 @@ class Cheryl {
 			
 			$paths = array($dir);
 			foreach ($filtered as $path => $file) {
-				if ($file->isDot()) {
+				if ($file->getFilename() == '.' || $file->getFilename() == '..') {
 					continue;
 				}
 				if ($file->isDir()) {
@@ -428,15 +428,15 @@ class Cheryl {
 		
 		return array('dirs' => $dirs, 'files' => $files);
 	}
-	
+
 	private function _cTime($file) {
-		return trim(shell_exec('stat -f %B '.escapeshellarg($file)));
+		return trim(shell_exec('stat -f %B '.escapeshellarg($file->getPathname())));
 	}
 
 	// do our own type detection
-	private function _type($file, $fullPath, $extended = false) {
+	private function _type($file, $extended = false) {
 
-		$mime = mime_content_type($fullPath);
+		$mime = mime_content_type($file->getPathname());
 
 		$mimes = explode('/',$mime);
 		$type = strtolower($mimes[0]);
@@ -459,21 +459,20 @@ class Cheryl {
 	}
 	
 	private function _getFileInfo($file, $extended = false) {
-		$fullpath = $file->getPath().DIRECTORY_SEPARATOR.$file->getBaseName();
-
 		$path = str_replace(realpath($this->config->root),'',realpath($file->getPath()));
+
 		if ($file->isDir()) {
 			$info = array(
 				'path' => $path,
-				'name' => $file->getBaseName(),
+				'name' => $file->getFilename(),
 				'writeable' => $file->isWritable(),
-				'type' => $this->_type($file, $fullpath, false)
+				'type' => $this->_type($file, false)
 			);
 
 		} elseif (!$file->isDir()) {
 			$info = array(
 				'path' => $path,
-				'name' => $file->getBaseName(),
+				'name' => $file->getFilename(),
 				'size' => $file->getSize(),
 				'mtime' => $file->getMTime(),
 				'ext' => $file->getExtension(),
@@ -481,11 +480,11 @@ class Cheryl {
 			);
 
 			if ($this->features->ctime) {
-				$info['ctime'] = $this->_cTime($fullpath);
+				$info['ctime'] = $this->_cTime($file);
 			}
 
 			if ($extended) {
-				$type = $this->_type($file, $fullpath, true);
+				$type = $this->_type($file, true);
 				
 				$info['type'] = $type['type'];
 
@@ -494,12 +493,12 @@ class Cheryl {
 				);
 
 				if ($type['type'] == 'text') {
-					$info['contents'] = file_get_contents($fullpath);
+					$info['contents'] = file_get_contents($file->getPathname());
 				}
 
 				if (strpos($mime, 'image') > -1) {
 					if ($this->features->exif) {
-						$exif = @exif_read_data($fullpath);
+						$exif = @exif_read_data($file->getPathname());
 
 						if ($exif) {
 							$keys = array('Make','Model','ExposureTime','FNumber','ISOSpeedRatings','FocalLength','Flash');
@@ -533,7 +532,7 @@ class Cheryl {
 				}
 				if (!$height || !$width) {
 					if ($this->features->gd) {
-						$is = @getimagesize($fullpath);
+						$is = @getimagesize($file->getPathname());
 						if ($is[0]) {
 							$width = $is[0];
 							$height = $is[1];
@@ -566,7 +565,6 @@ class Cheryl {
 		}
 		
 		$file = new SplFileObject($this->requestDir);
-		$fullpath = $file->getPath().DIRECTORY_SEPARATOR.$file->getBaseName();
 		
 		// not really sure if this range shit works. stole it from an old script i wrote
 		if (isset($_SERVER['HTTP_RANGE'])) {
@@ -607,14 +605,14 @@ class Cheryl {
 		header('Content-Transfer-Encoding: binary');
 		
 		if ($download) {
-			header('Content-Disposition: attachment; filename="'.$file->getBaseName().'"');
+			header('Content-Disposition: attachment; filename="'.$file->getFilename().'"');
 			header('Content-Type: application/force-download');
 		} else {
-			header('Content-Type: '. mime_content_type($fullpath));
+			header('Content-Type: '. mime_content_type($file->getPathname()));
 		}
 
 		// i wrote this freading a really long time ago but it seems to be more robust than SPL. someone correct me if im wrong
-		$fp = fopen($fullpath, 'rb');
+		$fp = fopen($file->getPathname(), 'rb');
 		fseek($fp, $seek_start);
 		while(!feof($fp)) {
 			set_time_limit(0);
@@ -699,7 +697,7 @@ class Cheryl {
 		if (is_dir($this->requestDir)) {
 			if ($this->config->recursiveDelete) {
 				foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($this->requestDir), RecursiveIteratorIterator::CHILD_FIRST) as $path) {
-					if ($path->isDot()) {
+					if ($path->getFilename() == '.' || $path->getFilename() == '..') {
 						continue;
 					}
 					$path->isFile() ? unlink($path->getPathname()) : rmdir($path->getPathname());
@@ -797,14 +795,6 @@ class CherylFilterIterator extends FilterIterator {
 }
 
 class CherylDirectoryIterator extends DirectoryIterator {
-	public function getBaseName($suffix = null) {
-		if (method_exists(get_parent_class($this), 'getBaseName')) {
-			return parent::getBaseName($suffix);
-		} else {
-			return basename($this->getPathName());
-		}
-	}
-
 	public function getExtension() {
 		if (method_exists(get_parent_class($this), 'getExtension')) {
 			$ext = parent::getExtension();
