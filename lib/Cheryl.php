@@ -143,14 +143,6 @@ class Cheryl {
 		return Cheryl_Template::show();
 	}
 
-	public static function iteratorFilter($current) {
-        return !in_array(
-            $current->getFileName(),
-            self::me()->config->hiddenFiles,
-            true
-        );
-	}
-
 	private function _request() {
 		// process authentication requests
 		switch ($this->requestPath[0]) {
@@ -414,7 +406,7 @@ class Cheryl {
 			}
 
 		} else {
-			$iter = new DirectoryIterator($dir);
+			$iter = new CherylDirectoryIterator($dir);
 			$filter = new CherylFilterIterator($iter);
 			$iterator = new IteratorIterator($filter);
 
@@ -437,12 +429,7 @@ class Cheryl {
 	private function _cTime($file) {
 		return trim(shell_exec('stat -f %B '.escapeshellarg($file)));
 	}
-	
-	private function _fileExtension($file, $fullPath) {
-		// return strtolower($file->getExtension());
-		return strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
-	}
-	
+
 	// do our own type detection
 	private function _type($file, $fullPath, $extended = false) {
 
@@ -450,7 +437,7 @@ class Cheryl {
 
 		$mimes = explode('/',$mime);
 		$type = strtolower($mimes[0]);
-		$ext = $this->_fileExtension($file, $fullPath);
+		$ext = $file->getExtension();
 
 		if ($ext == 'pdf') {
 			$type = 'image';
@@ -486,7 +473,7 @@ class Cheryl {
 				'name' => $file->getBaseName(),
 				'size' => $file->getSize(),
 				'mtime' => $file->getMTime(),
-				'ext' => $this->_fileExtension($file, $fullpath),
+				'ext' => $file->getExtension(),
 				'writeable' => $file->isWritable()
 			);
 
@@ -786,6 +773,14 @@ class Cheryl {
 	private function _getConfig() {
 		echo json_encode(array('status' => true, 'authed' => $this->authed));
 	}
+
+	public static function iteratorFilter($current) {
+        return !in_array(
+            $current->getFileName(),
+            self::me()->config->hiddenFiles,
+            true
+        );
+	}
 }
 
 
@@ -793,6 +788,25 @@ class CherylFilterIterator extends FilterIterator {
     public function accept() {
         return Cheryl::iteratorFilter($this->current());
     }
+}
+
+class CherylDirectoryIterator extends DirectoryIterator {
+	public function getBaseName($suffix = null) {
+		if (method_exists(get_parent_class($this), 'getBaseName')) {
+			return parent::getBaseName($suffix);
+		} else {
+			return basename($this->getPathName());
+		}
+	}
+
+	public function getExtension() {
+		if (method_exists(get_parent_class($this), 'getExtension')) {
+			$ext = parent::getExtension();
+		} else {
+			$ext = pathinfo($this->getPathName(), PATHINFO_EXTENSION);
+		}
+		return strtolower($ext);
+	}
 }
 
 
