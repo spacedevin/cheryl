@@ -124,8 +124,7 @@ class Cheryl {
 	public static function script() {
 		return preg_replace('@'.DIRECTORY_SEPARATOR.'((index|default)\.(php|htm|html))$@','',$_SERVER['SCRIPT_NAME']);
 	}
-	
-	
+
 	public static function password($password) {
 		// just a pinch
 		return sha1($password.CHERYL_SALT);
@@ -324,6 +323,7 @@ class Cheryl {
 		session_start();
 
 		if ($_SESSION['cheryl-authed']) {
+			$this->user = new Cheryl_User($_SESSION['cheryl-username']);
 			return $this->authed = true;
 		}
 	}
@@ -675,10 +675,11 @@ class Cheryl {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
 		}
-		if ($this->config->readonly) {
+		if ($this->config->readonly || !$this->user->permission('upload', $this->requestDir)) {
 			echo json_encode(array('status' => false, 'message' => 'no permission'));
 			exit;			
 		}
+
 		foreach ($_FILES as $file) {
 			move_uploaded_file($file['tmp_name'],$this->requestDir.DIRECTORY_SEPARATOR.$file['name']);
 		}
@@ -691,7 +692,7 @@ class Cheryl {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
 		}
-		if ($this->config->readonly) {
+		if ($this->config->readonly || !$this->user->permission('delete', $this->requestDir)) {
 			echo json_encode(array('status' => false, 'message' => 'no permission'));
 			exit;			
 		}
@@ -723,7 +724,7 @@ class Cheryl {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
 		}
-		if ($this->config->readonly) {
+		if ($this->config->readonly || !$this->user->permission('rename', $this->requestDir)) {
 			echo json_encode(array('status' => false, 'message' => 'no permission'));
 			exit;			
 		}
@@ -742,7 +743,7 @@ class Cheryl {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
 		}
-		if ($this->config->readonly) {
+		if ($this->config->readonly || !$this->user->permission('create', $this->requestDir)) {
 			echo json_encode(array('status' => false, 'message' => 'no permission'));
 			exit;			
 		}
@@ -761,7 +762,7 @@ class Cheryl {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
 		}
-		if ($this->config->readonly) {
+		if ($this->config->readonly || !$this->user->permission('save', $this->requestDir)) {
 			echo json_encode(array('status' => false, 'message' => 'no permission'));
 			exit;			
 		}

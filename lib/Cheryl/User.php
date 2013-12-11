@@ -13,7 +13,7 @@ if (!class_exists('Cheryl_User')) {
 
 				if ($type == 'simple') {
 					foreach (self::users() as $user) {
-						if ($user->username == Cheryl::me()->request['__username']) {
+						if ($user->username == $u) {
 							$u = $user;
 							break;
 						}
@@ -33,6 +33,7 @@ if (!class_exists('Cheryl_User')) {
 					// @todo #18
 				}
 			}
+
 			parent::__construct($u);
 		}
 
