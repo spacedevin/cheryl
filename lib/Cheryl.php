@@ -48,7 +48,9 @@ class Cheryl {
 				'permissions' => 'all' // if set to all, all permissions are enabled. even new features addedd in the future
 			)
 		),
-		'authenticationType' => 'simple', // simple: users are stored in the users array. mysql: uses a mysql database.
+		'authentication' => array(
+			'type' => 'simple'  // simple: users are stored in the users array. mysql: uses a mysqli interface. pdo: uses pdo interface. see examples
+		),
 		'useSha1' => true, // if true, passwords will be hashed client side for security.
 		'root' => 'files', // the folder you want users to browse
 		'includes' => 'Cheryl', // path to look for additional libraries. leave blank if you dont know
@@ -56,14 +58,7 @@ class Cheryl {
 		'readonly' => false, // if true, disables all write features, and doesnt require authentication
 		'features' => array(
 			'snooping' => false, // if true, a user can browse filters behind the root directory, posibly exposing secure files. not reccomended
-			'edit' => true, // if true allows the file editor for text files
-			'folderBrowsing' => true, // if true allows basic file browsing. note if both folder and recursive are off...you cant see anything
 			'recursiveBrowsing' => true, // if true, allows a simplified view that shows all files recursivly in a directory. with lots of files this can slow it down
-			'upload' => true, // if true allows upload of files
-			'move' => true, // if true allows moving of files
-			'paste' => true, // if true allows pasing of images directly
-			'note' => true, // allow .filenote files to be created to allow some meta data about the files,
-			'readonly' => false, // overrides all features for admin to only allow view
 		),
 		// files to hide from view
 		'hiddenFiles' => array(
@@ -109,7 +104,7 @@ class Cheryl {
 		}
 
 		if (is_object($config)) {
-			$config = json_decode(json_encode($config), true);
+			$config = (array)$config;
 		} elseif(is_array($config)) {
 			$config = $config;
 		} else {
@@ -117,7 +112,7 @@ class Cheryl {
 		}
 		
 		$config = array_merge($this->defaultConfig, $config);
-		$config = json_decode(json_encode($config), false);
+		$config = Cheryl_Model::toModel($config);
 		
 		$this->config = $config;
 
@@ -243,6 +238,7 @@ class Cheryl {
 	}
 
 	private function _setup() {
+
 		$this->features = (object)$this->features;
 
 		if (file_exists($this->config->includes)) {
@@ -790,6 +786,66 @@ class CherylFilterIterator extends FilterIterator {
         return Cheryl::iteratorFilter($this->current());
     }
 }
+
+
+class Cheryl_Model {
+	public static function toModel($array) {
+
+		$object = new Cheryl_Model();
+		if (is_array($array) && count($array) > 0) {
+			foreach ($array as $name => $value) {
+				if ($name === 0) {
+					$isArray = true;
+				}
+
+				if (!empty($name) || $name === 0) {
+
+					if (is_array($value)) {
+						if (!count($value)) {
+                    		$value = null;
+						} else {
+							$value = self::toModel($value);
+						}
+                    }
+					if ($isArray) {
+						switch ($value) {
+							case 'false':
+								$array[$name] = false;
+								break;
+							case 'true':
+								$array[$name] = true;
+								break;
+							case 'null':
+								$array[$name] = null;
+								break;
+							default:
+								$array[$name] = $value;
+								break;
+						}
+					} else {
+						$name = trim($name);
+						switch ($value) {
+							case 'false':
+								$object->$name = false;
+								break;
+							case 'true':
+								$object->$name = true;
+								break;
+							case 'null':
+								$object->$name = null;
+								break;
+							default:
+								$object->$name = $value;
+								break;
+						}					
+					}
+				}
+			}
+		}
+
+		return $isArray ? $array : $object;
+	}
+} 
 
 require_once('Cheryl/Template.php');
 require_once('Cheryl/User.php');
