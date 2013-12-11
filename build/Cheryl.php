@@ -2159,7 +2159,7 @@ button, .filter {
 			</div>
 			<div class="file-contents" ng-show="type!='dir'">
 				<div id="editor" ng-show="file.contents"></div>
-				<? /*<div class="file-image" style="background: url(/Files/{{file.path}}/{{file.name}})"></div> */ ?>
+				<?php /*<div class="file-image" style="background: url(/Files/{{file.path}}/{{file.name}})"></div> */ ?>
 			</div>
 		</div>
 		<div class="copyright">
