@@ -277,10 +277,6 @@ class Cheryl {
 		if (function_exists('json_decode')) {
 			$this->features->json = true;
 		}
-
-		if (!$this->features->json) {
-			die('I need JSON libraries. Either install it into PHP or create a file called <b>Cheryl/Library/JSON.php</b> and I will try to use that.');
-		}
 		
 		if (function_exists('exif_read_data')) {
 			$this->features->exif = true;
@@ -349,7 +345,13 @@ class Cheryl {
 
 	private function _digestRequest() {
 		if (strtolower($_SERVER['REQUEST_METHOD']) == 'post' && !$_REQUEST['__p']) {
-			$this->request = json_decode(file_get_contents('php://input'),true);
+			if (!$this->features->json) {
+				header('Status: 400 Bad Request');
+				header('HTTP/1.0 400 Bad Request');
+				echo json_encode(array('status' => false, 'JSON is not installed on this server. requests must use query strings'));
+			} else {
+				$this->request = json_decode(file_get_contents('php://input'),true);
+			}
 		} else {
 			$this->request = $_REQUEST;
 		}
@@ -851,7 +853,45 @@ class Cheryl_Model {
 
 		return $isArray ? $array : $object;
 	}
-} 
+}
+
+// we need to at least be able to encode data
+if (!function_exists('json_encode')) {
+	function json_encode($data) {
+		switch ($type = gettype($data)) {
+			case 'NULL':
+				return 'null';
+			case 'boolean':
+				return ($data ? 'true' : 'false');
+			case 'integer':
+			case 'double':
+			case 'float':
+				return $data;
+			case 'string':
+				return '"' . addslashes($data) . '"';
+			case 'object':
+				$data = get_object_vars($data);
+			case 'array':
+				$output_index_count = 0;
+				$output_indexed = array();
+				$output_associative = array();
+				foreach ($data as $key => $value) {
+					$output_indexed[] = json_encode($value);
+					$output_associative[] = json_encode($key) . ':' . json_encode($value);
+					if ($output_index_count !== NULL && $output_index_count++ !== $key) {
+						$output_index_count = NULL;
+					}
+				}
+				if ($output_index_count !== NULL) {
+					return '[' . implode(',', $output_indexed) . ']';
+				} else {
+					return '{' . implode(',', $output_associative) . '}';
+				}
+			default:
+				return '';
+		}
+	}
+}
 
 
 
@@ -2266,7 +2306,34 @@ var Cheryl =
 				action: 'home',
 				controller: 'RootCtrl'
 			});
-	})	
+	})
+	// Convert angulars json payload to the querystring standard so old versions of apache/php can understand
+	.config(function($httpProvider) {
+		$httpProvider.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded;charset=utf-8';
+		$httpProvider.defaults.transformRequest = [function(data) {
+
+		    var param = function(obj) {
+				var query = '';
+				var name, value, fullSubName, subValue, innerObj, i;
+		      
+				for (name in obj) {
+					value = obj[name];
+					if (value instanceof Array || value instanceof Object) {
+						for (var subName in value) {
+							innerObj = {};
+							innerObj[name + '[' + subName + ']'] = value[subName];
+							query += param(innerObj) + '&';
+						}
+					} else if(value !== undefined && value !== null) {
+						query += encodeURIComponent(name) + '=' + encodeURIComponent(value) + '&';
+					}
+				}
+				return query.length ? query.substr(0, query.length - 1) : query;
+			};
+
+			return angular.isObject(data) && String(data) !== '[object File]' ? param(data) : data;
+		}];
+	})
 	.config(function($locationProvider){
 		$locationProvider.html5Mode(true).hashPrefix('!');
 	})
