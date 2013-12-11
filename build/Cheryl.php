@@ -1010,6 +1010,18 @@ h1 input:focus, h2 input:focus {
 .toggles .search .search-box:-ms-input-placeholder {
 	color: #fff;
 }
+.toggles .search.active .search-box::-webkit-input-placeholder {
+	opacity: 0;
+}
+.toggles .search.active .search-box:-moz-placeholder {
+	opacity: 0;
+}
+.toggles .search.active .search-box::-moz-placeholder {
+	opacity: 0;
+}
+.toggles .search.active .search-box:-ms-input-placeholder {
+	opacity: 0;
+}
 .copyright {
 	clear: both;
 	float: right;
