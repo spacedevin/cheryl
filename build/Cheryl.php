@@ -2762,7 +2762,7 @@ var Cheryl =
 								success(function(data) {
 									if (data.status) {
 										scope.dialog = false;
-										$location.path(scope.file.path);
+										$location.path(scope.script + scope.file.path);
 									} else {
 										error();
 									}
