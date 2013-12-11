@@ -156,30 +156,44 @@ h1 input:focus, h2 input:focus {
 .toggles .search.active .search-box {
 	width: 15em;
 }
+
 .toggles .search .search-box::-webkit-input-placeholder {
 	color: #fff;
-}
-.toggles .search .search-box:-moz-placeholder {
-	color: #fff;
+	-webkit-transition: .2s opacity;
 }
 .toggles .search .search-box::-moz-placeholder {
 	color: #fff;
+	-moz-transition: .2s opacity;
 }
-.toggles .search .search-box:-ms-input-placeholder {
+.toggles .search .search-box::-ms-input-placeholder {
 	color: #fff;
+	-ms-transition: .2s opacity;
 }
+.toggles .search .search-box::-o-input-placeholder {
+	color: #fff;
+	-o-transition: .2s opacity;
+}
+.toggles .search .search-box::input-placeholder {
+	color: #fff;
+	transition: .2s opacity;
+}
+
 .toggles .search.active .search-box::-webkit-input-placeholder {
-	opacity: 0;
-}
-.toggles .search.active .search-box:-moz-placeholder {
 	opacity: 0;
 }
 .toggles .search.active .search-box::-moz-placeholder {
 	opacity: 0;
 }
-.toggles .search.active .search-box:-ms-input-placeholder {
+.toggles .search.active .search-box::-ms-placeholder {
 	opacity: 0;
 }
+.toggles .search.active .search-box::-o-input-placeholder {
+	opacity: 0;
+}
+.toggles .search.active .search-box::input-placeholder {
+	opacity: 0;
+}
+
 .copyright {
 	clear: both;
 	float: right;
