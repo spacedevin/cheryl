@@ -436,6 +436,11 @@ class Cheryl {
 		return trim(shell_exec('stat -f %B '.escapeshellarg($file)));
 	}
 	
+	private function _fileExtension($file, $fullPath) {
+		// return strtolower($file->getExtension());
+		return strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+	}
+	
 	// do our own type detection
 	private function _type($file, $fullPath, $extended = false) {
 
@@ -443,8 +448,8 @@ class Cheryl {
 
 		$mimes = explode('/',$mime);
 		$type = strtolower($mimes[0]);
-		$ext = strtolower($file->getExtension());
-		
+		$ext = $this->_fileExtension($file, $fullPath);
+
 		if ($ext == 'pdf') {
 			$type = 'image';
 		}
@@ -479,7 +484,7 @@ class Cheryl {
 				'name' => $file->getBaseName(),
 				'size' => $file->getSize(),
 				'mtime' => $file->getMTime(),
-				'ext' => $file->getExtension(),
+				'ext' => $this->_fileExtension($file, $fullpath),
 				'writeable' => $file->isWritable()
 			);
 
