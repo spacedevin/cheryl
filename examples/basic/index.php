@@ -20,10 +20,11 @@ require_once('../../build/Cheryl.php');
 // give Cheryl our config. this will merge with the default config
 Cheryl::init(array(
 	'root' => '../files',
-	'admin' => array(
+	'users' => array(array(
 		'username' => 'admin',
 		'password' => Cheryl::password('password'), // remove the function and place a hashed password here so you dont have to save it in plain text
-	)
+		'permissions' => 'all'
+	))
 ));
 
 // manualy run the script since were using a custom config

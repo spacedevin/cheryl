@@ -1,5 +1,21 @@
 <?php
 
+/**
+ * Cheryl 3.0
+ *
+ * 2003 - 2013 Devin Smith
+ * https://github.com/arzynik/cheryl
+ *
+ * Cheryl is a web based file manager for the modern web. Built
+ * on top of PHP5 and AngularJS with lots of love from HTML5 and
+ * CSS3 animations.
+ *
+ * In intall, just copy this script to where you want to share files.
+ * See the config below for options.
+ *
+ */
+ 
+
 ignore_user_abort(false);
 set_time_limit(10);
 date_default_timezone_set('America/Los_Angeles');
@@ -24,13 +40,20 @@ class Cheryl {
 
 	private $defaultConfig = array(
 		// the admin username nad password to access all features. if set to blank, all users will have access to all enabled features
-		'admin' => array(
-			'username' => 'admin',
-			'password' => '', // remove the function and place a hashed password here so you dont have to save it in plain text
+		// array of users. this can be overwridden by custom user clases
+		'users' => array(
+			array(
+				'username' => 'admin',
+				'password' => '',
+				'permissions' => 'all' // if set to all, all permissions are enabled. even new features addedd in the future
+			)
 		),
+		'authenticationType' => 'simple', // simple: users are stored in the users array. mysql: uses a mysql database.
+		'useSha1' => true, // if true, passwords will be hashed client side for security.
 		'root' => 'files', // the folder you want users to browse
 		'includes' => 'Cheryl', // path to look for additional libraries. leave blank if you dont know
 		'templateName' => 'cheryl', // name of the template to look for. leave alone if you dont know
+		'readonly' => false, // if true, disables all write features, and doesnt require authentication
 		'features' => array(
 			'snooping' => false, // if true, a user can browse filters behind the root directory, posibly exposing secure files. not reccomended
 			'edit' => true, // if true allows the file editor for text files
@@ -41,7 +64,6 @@ class Cheryl {
 			'paste' => true, // if true allows pasing of images directly
 			'note' => true, // allow .filenote files to be created to allow some meta data about the files,
 			'readonly' => false, // overrides all features for admin to only allow view
-			'publicRead' => false // allow the public to have readonly features without loging in
 		),
 		// files to hide from view
 		'hiddenFiles' => array(
@@ -100,8 +122,8 @@ class Cheryl {
 		$this->config = $config;
 
 		$this->_setup();
-		$this->_authenticate();
 		$this->_digestRequest();
+		$this->_authenticate();
 	}
 	
 	public static function script() {
@@ -134,7 +156,6 @@ class Cheryl {
             true
         );
 	}
-
 
 	private function _request() {
 		// process authentication requests
@@ -299,7 +320,7 @@ class Cheryl {
 	}
 
 	private function _authenticate() {
-		if (!$this->config->admin || !$this->config->admin->username) {
+		if (!Cheryl_User::users()) {
 			// allow anonymouse access. ur crazy!
 			return $this->authed = true;
 		}
@@ -312,20 +333,16 @@ class Cheryl {
 	}
 	
 	private function _login() {
-		if ($this->request['__username']) {
-			// log in attempt
-			if ($this->request['__hash']) {
-				$pass = $this->request['__hash'];
-			} else {
-				$pass = self::password($this->request['__password']);
-			}
+		$user = Cheryl_User::login();
+		if ($user) {
+			$this->user = $user;
+			$this->authed = $_SESSION['cheryl-authed'] = true;
+			$_SESSION['cheryl-username'] = $this->user->username;
+			return true;
 
-			if ($this->request['__username'] == $this->config->admin->username && (!$this->config->admin->password || $pass == $this->config->admin->password)) {
-				// successfuly send username and password
-				return $this->authed = $_SESSION['cheryl-authed'] = true;	
-			}
+		} else {
+			return false;
 		}
-		return false;
 	}
 	
 	private function _logout() {
@@ -544,7 +561,7 @@ class Cheryl {
 	}
 	
 	private function _getFile($download = false) {
-		if (!$this->authed && !$this->config->features->publicRead) {
+		if (!$this->authed && !$this->config->readonly) {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
 		}
@@ -617,7 +634,7 @@ class Cheryl {
 	}
 
 	private function _requestList() {
-		if (!$this->authed && !$this->config->features->publicRead) {
+		if (!$this->authed && !$this->config->readonly) {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
 		}
@@ -662,6 +679,10 @@ class Cheryl {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
 		}
+		if ($this->config->readonly) {
+			echo json_encode(array('status' => false, 'message' => 'no permission'));
+			exit;			
+		}
 		foreach ($_FILES as $file) {
 			move_uploaded_file($file['tmp_name'],$this->requestDir.DIRECTORY_SEPARATOR.$file['name']);
 		}
@@ -673,6 +694,10 @@ class Cheryl {
 		if (!$this->authed) {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
+		}
+		if ($this->config->readonly) {
+			echo json_encode(array('status' => false, 'message' => 'no permission'));
+			exit;			
 		}
 		
 		$status = false;
@@ -702,6 +727,10 @@ class Cheryl {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
 		}
+		if ($this->config->readonly) {
+			echo json_encode(array('status' => false, 'message' => 'no permission'));
+			exit;			
+		}
 
 		if (@rename($this->requestDir, dirname($this->requestDir).DIRECTORY_SEPARATOR.$this->requestName)) {
 			$status = true;
@@ -716,6 +745,10 @@ class Cheryl {
 		if (!$this->authed) {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
+		}
+		if ($this->config->readonly) {
+			echo json_encode(array('status' => false, 'message' => 'no permission'));
+			exit;			
 		}
 
 		if (@mkdir($this->requestDir.DIRECTORY_SEPARATOR.$this->requestName,0777)) {
@@ -732,6 +765,11 @@ class Cheryl {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
 		}
+		if ($this->config->readonly) {
+			echo json_encode(array('status' => false, 'message' => 'no permission'));
+			exit;			
+		}
+
 		if (@file_put_contents($this->requestDir,$this->request['c'])) {
 			$status = true;
 		} else {
@@ -2747,6 +2785,59 @@ Object.size = function(obj) {
 				ob_end_clean();
 			}
 			return $res;
+		}
+	}
+}
+
+
+if (!class_exists('Cheryl_User')) {
+	class Cheryl_User extends Cheryl_User_Base {
+		public static function users() {
+			return Cheryl::me()->config->users;
+		}
+
+		public static function login() {
+			if (Cheryl::me()->request['__username']) {
+				// log in attempt
+				if (Cheryl::me()->request['__hash']) {
+					$pass = Cheryl::me()->request['__hash'];
+				} else {
+					$pass = self::password(Cheryl::me()->request['__password']);
+				}
+			}
+
+			foreach (self::users() as $user) {
+				if ($user->username == Cheryl::me()->request['__username']) {
+					$u = $user;
+					break;
+				}
+			}
+
+			if ($u && (!$u->password || $pass == $u->password)) {
+				// successfuly send username and password
+				return new Cheryl_User($u);
+			}
+
+			return false;			
+		}
+	}
+}
+
+
+class Cheryl_User_Base {
+	public static function users() {
+		return array();
+	}
+	
+	public static function login() {
+		return false;
+	}
+
+	public function permission($permission) {
+		if ($this->permissions == 'all' || is_array($this->permissions) && $this->permissions[$perimssions] || is_object($this->permissions) && $this->permissions->{$perimssions}) {
+			return true;
+		} else {
+			return false;
 		}
 	}
 }
