@@ -2129,7 +2129,7 @@ button, .filter {
 			</div>
 
 			<div class="files" ng-show="type=='dir'">
-				<a href="{{path()}}{{file.path}}/{{file.name}}" class="file" ng-repeat="file in dirs" tabindex="1" ng-show="!filters.recursive">
+				<a href="{{path()}}{{file.path}}/{{file.name}}" class="file" ng-repeat="file in dirs | filter:filterFolders" tabindex="1" ng-show="!filters.recursive">
 					<i class="icon fa fa-folder-o"></i>
 					<div class="fileinfo">
 						<span class="filename">{{file.name}}</span>
@@ -2376,6 +2376,13 @@ var Cheryl =
 					return false;
 				}
 			}
+			if ($scope.filters.search && file.name.indexOf($scope.filters.search) === -1) {
+				return false;
+			}
+			return true;
+		};
+		
+		$scope.filterFolders = function(file) {
 			if ($scope.filters.search && file.name.indexOf($scope.filters.search) === -1) {
 				return false;
 			}
