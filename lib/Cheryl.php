@@ -256,7 +256,7 @@ class Cheryl {
 			}
 		}
 
-		if (in_array('mod_rewrite', apache_get_modules())) {
+		if ((function_exists('apache_get_modules') && in_array('mod_rewrite', apache_get_modules())) || getenv('HTTP_MOD_REWRITE') == 'On') {
 			$this->features->rewrite = true;
 		}
 		
