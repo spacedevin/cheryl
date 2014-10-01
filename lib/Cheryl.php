@@ -29,12 +29,6 @@ if (!defined('CHERYL_SALT')) {
 	define('CHERYL_SALT', 'SOMETHING/NOT/COOL/AND/RANDOM');
 }
 
-// if this wasnt defined, then automaticly run the script asuming this is standalone
-if (!defined('CHERYL_CONTROL')) {
-	$cheryl = new Cheryl();
-	$cheryl->go();
-}
-
 class Cheryl {
 	private static $_cheryl;
 
@@ -905,3 +899,4 @@ if (!function_exists('json_encode')) {
 
 require_once('Cheryl/Template.php');
 require_once('Cheryl/User.php');
+require_once('Cheryl/Extras.php');

@@ -33,6 +33,13 @@ $file = str_replace(
 	str_replace('<?php','',file_get_contents($dir.DIRECTORY_SEPARATOR.'Cheryl'.DIRECTORY_SEPARATOR.'User.php')),
 	$file
 );
+
+$file = str_replace(
+	'require_once(\'Cheryl/Extras.php\');',
+	str_replace('<?php','',file_get_contents($dir.DIRECTORY_SEPARATOR.'Cheryl'.DIRECTORY_SEPARATOR.'Extras.php')),
+	$file
+);
+
 require_once($dir.DIRECTORY_SEPARATOR.'Cheryl'.DIRECTORY_SEPARATOR.'Template.php');
 
 

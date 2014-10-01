@@ -29,12 +29,6 @@ if (!defined('CHERYL_SALT')) {
 	define('CHERYL_SALT', 'SOMETHING/NOT/COOL/AND/RANDOM');
 }
 
-// if this wasnt defined, then automaticly run the script asuming this is standalone
-if (!defined('CHERYL_CONTROL')) {
-	$cheryl = new Cheryl();
-	$cheryl->go();
-}
-
 class Cheryl {
 	private static $_cheryl;
 
@@ -3082,4 +3076,12 @@ class Cheryl_User_Base {
 			return false;
 		}
 	}
+}
+
+
+
+// if this wasnt defined, then automaticly run the script asuming this is standalone
+if (!defined('CHERYL_CONTROL')) {
+	$cheryl = new Cheryl();
+	$cheryl->go();
 }
