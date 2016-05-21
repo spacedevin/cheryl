@@ -355,7 +355,7 @@
 			<div class="details" ng-show="type!='dir'">
 				<h2>File info</h2>
 				<ul>
-					<li class="info">Created: {{file.ctime*1000 | date:'medium'}}</li>
+					<li class="info" ng-show="file.ctime">Created: {{file.ctime*1000 | date:'medium'}}</li>
 					<li class="info">Modified: {{file.mtime*1000 | date:'medium'}}</li>
 					<li class="info">Size: {{file.sizeReadable}}</li>
 					<li class="info" ng-repeat="(key, val) in file.meta">{{key}}: <b>{{val}}</b></li>
