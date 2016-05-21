@@ -27,7 +27,7 @@ Cheryl is a web based file manager for the modern web. Built on top of PHP5 and 
 *note: if you are not interested in developing for Chery, just ignore the **lib** folder.*
 
 #### Older versions
-##### 1.1 - https://github.com/arzynik/osFileManager-Static
+##### 1.1 - https://github.com/arzynik/osFileManager/tree/static
 Single file, no MySQL required
 
 ##### 2.2 - https://github.com/arzynik/osFileManager
