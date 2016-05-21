@@ -538,28 +538,27 @@ class Cheryl {
 					$info['meta']['width'] = $width;
 				}
 			}
-			
-			$info['meta']['mime'] = $mime;
+
 			$info['perms'] = $file->getPerms();
 
 		}
 		return $info;
 	}
-	
+
 	private function _getFile($download = false) {
 		if (!$this->authed && !$this->config->readonly) {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
 		}
-		
+
 		if (!$this->requestDir || !is_file($this->requestDir)) {
 			header('Status: 404 Not Found');
 			header('HTTP/1.0 404 Not Found');
 			exit;
 		}
-		
+
 		$file = new SplFileObject($this->requestDir);
-		
+
 		// not really sure if this range shit works. stole it from an old script i wrote
 		if (isset($_SERVER['HTTP_RANGE'])) {
 			list($size_unit, $range_orig) = explode('=', $_SERVER['HTTP_RANGE'], 2);
@@ -568,14 +567,14 @@ class Cheryl {
 			} else {
 				$range = '';
 			}
-			
+
 			if ($range) {
 				list ($seek_start, $seek_end) = explode('-', $range, 2);
 			}
-			
+
 			$seek_end = (empty($seek_end)) ? ($size - 1) : min(abs(intval($seek_end)),($size - 1));
 			$seek_start = (empty($seek_start) || $seek_end < abs(intval($seek_start))) ? 0 : max(abs(intval($seek_start)),0);
-			
+
 			if ($seek_start > 0 || $seek_end < ($size - 1)) {
 				header('HTTP/1.1 206 Partial Content');
 			} else {
