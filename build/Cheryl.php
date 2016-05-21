@@ -14,7 +14,7 @@
  * See the config below for options.
  *
  */
- 
+
 
 ignore_user_abort(false);
 set_time_limit(10);
@@ -83,7 +83,7 @@ class Cheryl {
 	);
 
 	public $authed = false;
-	
+
 
 	public static function init($config = null) {
 		if (!self::$_cheryl) {
@@ -91,7 +91,7 @@ class Cheryl {
 		}
 		return self::$_cheryl;
 	}
-	
+
 	public function __construct($config = null) {
 		if (!self::$_cheryl) {
 			self::$_cheryl = $this;
@@ -104,17 +104,17 @@ class Cheryl {
 		} else {
 			$config = array();
 		}
-		
+
 		$config = array_merge($this->defaultConfig, $config);
 		$config = Cheryl_Model::toModel($config);
-		
+
 		$this->config = $config;
 
 		$this->_setup();
 		$this->_digestRequest();
 		$this->_authenticate();
 	}
-	
+
 	public static function script() {
 		return preg_replace('@'.DIRECTORY_SEPARATOR.'((index|default)\.(php|htm|html))$@','',$_SERVER['SCRIPT_NAME']);
 	}
@@ -123,16 +123,16 @@ class Cheryl {
 		// just a pinch
 		return sha1($password.CHERYL_SALT);
 	}
-	
+
 	public static function me() {
 		return self::$_cheryl;
 	}
-	
+
 	public static function go() {
 		self::me()->_request();
 		echo self::template();
 	}
-	
+
 	public static function template() {
 		return Cheryl_Template::show();
 	}
@@ -153,7 +153,7 @@ class Cheryl {
 					echo json_encode(array('status' => false, 'message' => 'failed to log in'));
 				}
 				exit;
-				
+
 			// get the config and authentication status
 			case 'config':
 				$this->_getConfig();
@@ -165,37 +165,37 @@ class Cheryl {
 				$this->_requestList();
 				exit;
 				break;
-			
+
 			// download a file
 			case 'dl':
 				$this->_getFile(true);
 				exit;
 				break;
-				
+
 			// upload a file
 			case 'ul':
 				$this->_takeFile();
 				exit;
 				break;
-				
+
 			// view a file
 			case 'vw':
 				$this->_getFile(false);
 				exit;
 				break;
-				
+
 			// delete a file
 			case 'rm':
 				$this->_deleteFile();
 				exit;
 				break;
-				
+
 			// rename a file
 			case 'rn':
 				$this->_renameFile();
 				exit;
 				break;
-				
+
 			// make a directory
 			case 'mk':
 				$this->_makeFile();
@@ -207,14 +207,14 @@ class Cheryl {
 				$this->_saveFile();
 				exit;
 				break;
-				
+
 			// display icon
 			case 'icon':
 				header('Content-Type: image/png');
 				echo base64_decode('iVBORw0KGgoAAAANSUhEUgAAAJgAAACYCAYAAAAYwiAhAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3NpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDphYWFjYWRhNi1lYjI0LTQ2NTMtYWNmYi1jYzY2NDZhNDk0MzMiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6NDYyNUIwMDQ1NkY4MTFFM0FFODVCQ0FBODlEMUY3OTkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6NDYyNUIwMDM1NkY4MTFFM0FFODVCQ0FBODlEMUY3OTkiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChNYWNpbnRvc2gpIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6YWFhY2FkYTYtZWIyNC00NjUzLWFjZmItY2M2NjQ2YTQ5NDMzIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOmFhYWNhZGE2LWViMjQtNDY1My1hY2ZiLWNjNjY0NmE0OTQzMyIvPiA8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');
 				exit;
 				break;
-				
+
 
 			default:
 				// display the main html document by letting it pass through php
@@ -243,7 +243,7 @@ class Cheryl {
 			$this->config->root = dirname($_SERVER['SCRIPT_FILENAME']).DIRECTORY_SEPARATOR;
 		} else {
 			$this->config->root = dirname($_SERVER['SCRIPT_FILENAME']).DIRECTORY_SEPARATOR.$this->config->root.DIRECTORY_SEPARATOR;
-			
+
 			if (!file_exists($this->config->root)) {
 				@mkdir($this->config->root);
 				@chmod($this->config->root, 0777);
@@ -253,7 +253,7 @@ class Cheryl {
 		if ((function_exists('apache_get_modules') && in_array('mod_rewrite', apache_get_modules())) || getenv('HTTP_MOD_REWRITE') == 'On') {
 			$this->features->rewrite = true;
 		}
-		
+
 		if (!function_exists('json_decode')) {
 			if (file_exists($this->config->includes.'Cheryl/Library/JSON.php')) {
 				require_once($this->config->includes.'Cheryl/Library/JSON.php');
@@ -263,7 +263,7 @@ class Cheryl {
 		if (function_exists('json_decode')) {
 			$this->features->json = true;
 		}
-		
+
 		if (function_exists('exif_read_data')) {
 			$this->features->exif = true;
 		}
@@ -309,7 +309,7 @@ class Cheryl {
 			return $this->authed = true;
 		}
 	}
-	
+
 	private function _login() {
 		$user = Cheryl_User::login();
 		if ($user) {
@@ -322,7 +322,7 @@ class Cheryl {
 			return false;
 		}
 	}
-	
+
 	private function _logout() {
 		@session_destroy();
 		@session_regenerate_id();
@@ -352,7 +352,7 @@ class Cheryl {
 		}
 
 		$this->requestPath = $url;
-		
+
 		// sanatize file/directory requests
 		if ($this->request['_d']) {
 			$this->request['_d'] = str_replace('/',DIRECTORY_SEPARATOR, $this->request['_d']);
@@ -364,22 +364,22 @@ class Cheryl {
 				//$this->requestDir = preg_replace('@^'.DIRECTORY_SEPARATOR.basename(__FILE__).'@','',$this->requestDir);
 				$this->requestDir = $this->config->root.$this->requestDir;
 			}
-			
+
 			if (file_exists($this->requestDir)) {
 				$this->requestDir = dirname($this->requestDir).DIRECTORY_SEPARATOR.basename($this->requestDir);
 			} else {
 				$this->requestDir = null;
 			}
 		}
-		
+
 		// sanatize filename
 		if ($this->request['_n']) {
-			$this->requestName = preg_replace('@'.DIRECTORY_SEPARATOR.'@','',$this->request['_n']);	
+			$this->requestName = preg_replace('@'.DIRECTORY_SEPARATOR.'@','',$this->request['_n']);
 		}
 	}
-	
+
 	private function _getFiles($dir, $filters = array()) {
-		
+
 		if ($filters['recursive']) {
 			$iter = new RecursiveDirectoryIterator($dir);
 			$iterator = new RecursiveIteratorIterator(
@@ -387,9 +387,9 @@ class Cheryl {
 				RecursiveIteratorIterator::SELF_FIRST,
 				RecursiveIteratorIterator::CATCH_GET_CHILD
 			);
-			
+
 			$filtered = new CherylFilterIterator($iterator);
-			
+
 			$paths = array($dir);
 			foreach ($filtered as $path => $file) {
 				if ($file->getFilename() == '.' || $file->getFilename() == '..') {
@@ -419,7 +419,7 @@ class Cheryl {
 				}
 			}
 		}
-		
+
 		return array('dirs' => $dirs, 'files' => $files);
 	}
 
@@ -439,19 +439,19 @@ class Cheryl {
 		if ($ext == 'pdf') {
 			$type = 'image';
 		}
-		
+
 		$ret = array(
 			'type' => $type,
 			'mime' => $mime
 		);
-		
+
 		if (!$extended) {
 			return $ret['type'];
 		} else {
 			return $ret;
 		}
 	}
-	
+
 	private function _getFileInfo($file, $extended = false) {
 		$path = str_replace(realpath($this->config->root),'',realpath($file->getPath()));
 
@@ -479,7 +479,7 @@ class Cheryl {
 
 			if ($extended) {
 				$type = $this->_type($file, true);
-				
+
 				$info['type'] = $type['type'];
 
 				$info['meta'] = array(
@@ -538,28 +538,27 @@ class Cheryl {
 					$info['meta']['width'] = $width;
 				}
 			}
-			
-			$info['meta']['mime'] = $mime;
+
 			$info['perms'] = $file->getPerms();
 
 		}
 		return $info;
 	}
-	
+
 	private function _getFile($download = false) {
 		if (!$this->authed && !$this->config->readonly) {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
 		}
-		
+
 		if (!$this->requestDir || !is_file($this->requestDir)) {
 			header('Status: 404 Not Found');
 			header('HTTP/1.0 404 Not Found');
 			exit;
 		}
-		
+
 		$file = new SplFileObject($this->requestDir);
-		
+
 		// not really sure if this range shit works. stole it from an old script i wrote
 		if (isset($_SERVER['HTTP_RANGE'])) {
 			list($size_unit, $range_orig) = explode('=', $_SERVER['HTTP_RANGE'], 2);
@@ -568,14 +567,14 @@ class Cheryl {
 			} else {
 				$range = '';
 			}
-			
+
 			if ($range) {
 				list ($seek_start, $seek_end) = explode('-', $range, 2);
 			}
-			
+
 			$seek_end = (empty($seek_end)) ? ($size - 1) : min(abs(intval($seek_end)),($size - 1));
 			$seek_start = (empty($seek_start) || $seek_end < abs(intval($seek_start))) ? 0 : max(abs(intval($seek_start)),0);
-			
+
 			if ($seek_start > 0 || $seek_end < ($size - 1)) {
 				header('HTTP/1.1 206 Partial Content');
 			} else {
@@ -597,7 +596,7 @@ class Cheryl {
 		header('Last-Modified: '.date('r',$file->getMTime()));
 		header('Content-Length: '.$contentLength);
 		header('Content-Transfer-Encoding: binary');
-		
+
 		if ($download) {
 			header('Content-Disposition: attachment; filename="'.$file->getFilename().'"');
 			header('Content-Type: application/force-download');
@@ -658,7 +657,7 @@ class Cheryl {
 			echo json_encode(array('type' => 'dir', 'list' => $files, 'file' => $info));
 		}
 	}
-	
+
 	private function _takeFile() {
 		if (!$this->authed) {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
@@ -666,7 +665,7 @@ class Cheryl {
 		}
 		if ($this->config->readonly || !$this->user->permission('upload', $this->requestDir)) {
 			echo json_encode(array('status' => false, 'message' => 'no permission'));
-			exit;			
+			exit;
 		}
 
 		foreach ($_FILES as $file) {
@@ -675,7 +674,7 @@ class Cheryl {
 
 		echo json_encode(array('status' => true));
 	}
-	
+
 	private function _deleteFile() {
 		if (!$this->authed) {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
@@ -683,9 +682,9 @@ class Cheryl {
 		}
 		if ($this->config->readonly || !$this->user->permission('delete', $this->requestDir)) {
 			echo json_encode(array('status' => false, 'message' => 'no permission'));
-			exit;			
+			exit;
 		}
-		
+
 		$status = false;
 
 		if (is_dir($this->requestDir)) {
@@ -707,10 +706,10 @@ class Cheryl {
 				$status = true;
 			}
 		}
-		
+
 		echo json_encode(array('status' => $status));
 	}
-	
+
 	private function _renameFile() {
 		if (!$this->authed) {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
@@ -718,7 +717,7 @@ class Cheryl {
 		}
 		if ($this->config->readonly || !$this->user->permission('rename', $this->requestDir)) {
 			echo json_encode(array('status' => false, 'message' => 'no permission'));
-			exit;			
+			exit;
 		}
 
 		if (@rename($this->requestDir, dirname($this->requestDir).DIRECTORY_SEPARATOR.$this->requestName)) {
@@ -726,10 +725,10 @@ class Cheryl {
 		} else {
 			$status = false;
 		}
-		
+
 		echo json_encode(array('status' => $status, 'name' => $this->requestName));
 	}
-	
+
 	private function _makeFile() {
 		if (!$this->authed) {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
@@ -737,7 +736,7 @@ class Cheryl {
 		}
 		if ($this->config->readonly || !$this->user->permission('create', $this->requestDir)) {
 			echo json_encode(array('status' => false, 'message' => 'no permission'));
-			exit;			
+			exit;
 		}
 
 		if (@mkdir($this->requestDir.DIRECTORY_SEPARATOR.$this->requestName,0777)) {
@@ -745,10 +744,10 @@ class Cheryl {
 		} else {
 			$status = false;
 		}
-		
+
 		echo json_encode(array('status' => $status, 'name' => $this->requestName));
 	}
-	
+
 	private function _saveFile() {
 		if (!$this->authed) {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
@@ -756,7 +755,7 @@ class Cheryl {
 		}
 		if ($this->config->readonly || !$this->user->permission('save', $this->requestDir)) {
 			echo json_encode(array('status' => false, 'message' => 'no permission'));
-			exit;			
+			exit;
 		}
 
 		if (@file_put_contents($this->requestDir,$this->request['c'])) {
@@ -767,7 +766,7 @@ class Cheryl {
 
 		echo json_encode(array('status' => $status));
 	}
-	
+
 	private function _getConfig() {
 		echo json_encode(array('status' => true, 'authed' => $this->authed));
 	}
@@ -849,7 +848,7 @@ class Cheryl_Model {
 							default:
 								$object->$name = $value;
 								break;
-						}					
+						}
 					}
 				}
 			}
@@ -945,7 +944,7 @@ if (!class_exists('Cheryl_Template')) {
 <title>Cheryl</title>
 <link rel="shortcut icon" href="http://cheryl.io/icon.png">
 <link rel="apple-touch-icon-precomposed" href="http://cheryl.io/icon.png">
-	
+
 <style>html, body, margin, form, a, h1, h2, h3, h4, h5, h6, select, input, tr, td, table, ul, ol, li, textarea, p, button {
 	margin: 0;
 	padding: 0;
@@ -1783,7 +1782,7 @@ button, .filter {
 	<div class="wrapper clearfix" ng-show="authed">
 		<div class="panel">
 			<a href="<?php echo Cheryl::script() ? Cheryl::script() : '/' ?>"><div class="logo">
-		
+
 				<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
 					 width="689.318px" height="642.217px" viewBox="0 0 689.318 642.217" enable-background="new 0 0 689.318 642.217"
 					 xml:space="preserve">
@@ -1791,11 +1790,11 @@ button, .filter {
 					<g>
 						<g>
 							<g>
-								
+
 									<ellipse transform="matrix(-0.6304 -0.7763 0.7763 -0.6304 829.5235 668.4048)" fill="#3B1410" cx="573.881" cy="136.727" rx="112.318" ry="117.438"/>
 								<g>
 									<g>
-										
+
 											<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="-402.9502" y1="939.6608" x2="-331.6008" y2="939.6608" gradientTransform="matrix(-0.0414 -0.999 0.999 -0.0414 -313.7207 -151.8308)">
 											<stop  offset="0" style="stop-color:#3B1410"/>
 											<stop  offset="0.1834" style="stop-color:#502919"/>
@@ -1804,7 +1803,7 @@ button, .filter {
 										</linearGradient>
 										<path fill="url(#SVGID_1_)" d="M610.424,213.071c0,0,63.683,1.451,59.549-73.829
 											C669.974,139.242,663.009,200.72,610.424,213.071z"/>
-										
+
 											<linearGradient id="SVGID_2_" gradientUnits="userSpaceOnUse" x1="335.5046" y1="363.5505" x2="410.826" y2="363.5505" gradientTransform="matrix(0.7423 0.67 0.67 -0.7423 67.1035 77.1552)">
 											<stop  offset="0" style="stop-color:#3B1410"/>
 											<stop  offset="0.1834" style="stop-color:#502919"/>
@@ -1813,7 +1812,7 @@ button, .filter {
 										</linearGradient>
 										<path fill="url(#SVGID_2_)" d="M538.389,55.726c0,0,40.268-47.276,98.591,3.174C636.98,58.901,582.618,25.227,538.389,55.726z
 											"/>
-										
+
 											<linearGradient id="SVGID_3_" gradientUnits="userSpaceOnUse" x1="-2232.4961" y1="-587.3471" x2="-2176.293" y2="-587.3471" gradientTransform="matrix(-0.5277 0.8493 -0.8493 -0.5277 -1062.6609 1651.484)">
 											<stop  offset="0" style="stop-color:#3B1410"/>
 											<stop  offset="0.1834" style="stop-color:#502919"/>
@@ -1822,7 +1821,7 @@ button, .filter {
 										</linearGradient>
 										<path fill="url(#SVGID_3_)" d="M645.642,86.604c0,0-56.077-31.247-93.199,6.516C552.443,93.12,587.056,35.894,645.642,86.604z
 											"/>
-										
+
 											<linearGradient id="SVGID_4_" gradientUnits="userSpaceOnUse" x1="-2228.9397" y1="-295.3342" x2="-2155.5984" y2="-295.3342" gradientTransform="matrix(-0.6438 0.7652 -0.7652 -0.6438 -1035.2269 1601.1501)">
 											<stop  offset="0" style="stop-color:#3B1410"/>
 											<stop  offset="0.1834" style="stop-color:#502919"/>
@@ -1831,7 +1830,7 @@ button, .filter {
 										</linearGradient>
 										<path fill="url(#SVGID_4_)" d="M645.847,102.606c0,0-50.104-21.263-87.027,22.627
 											C558.819,125.233,592.348,71.114,645.847,102.606z"/>
-										
+
 											<linearGradient id="SVGID_5_" gradientUnits="userSpaceOnUse" x1="-2289.9167" y1="-302.4471" x2="-2206.2373" y2="-302.4471" gradientTransform="matrix(-0.8224 0.569 -0.569 -0.8224 -1393.106 1197.1461)">
 											<stop  offset="0" style="stop-color:#3B1410"/>
 											<stop  offset="0.1834" style="stop-color:#502919"/>
@@ -1840,7 +1839,7 @@ button, .filter {
 										</linearGradient>
 										<path fill="url(#SVGID_5_)" d="M657.495,136.096c0,0-17.959,53.366-70.557,45.1
 											C586.939,181.197,644.183,201.136,657.495,136.096z"/>
-										
+
 											<linearGradient id="SVGID_6_" gradientUnits="userSpaceOnUse" x1="-2219.0256" y1="-316.291" x2="-2147.5671" y2="-316.291" gradientTransform="matrix(-0.6438 0.7652 -0.7652 -0.6438 -1035.2269 1601.1501)">
 											<stop  offset="0" style="stop-color:#3B1410"/>
 											<stop  offset="0.1834" style="stop-color:#502919"/>
@@ -1858,7 +1857,7 @@ button, .filter {
 									C63.379,11.115,135.893,5.225,186.242,46.116z"/>
 								<g>
 									<g>
-										
+
 											<linearGradient id="SVGID_7_" gradientUnits="userSpaceOnUse" x1="-434.0402" y1="1772.5775" x2="-362.6902" y2="1772.5775" gradientTransform="matrix(0.0414 -0.999 -0.999 -0.0414 1836.4091 -151.8308)">
 											<stop  offset="0" style="stop-color:#3B1410"/>
 											<stop  offset="0.1834" style="stop-color:#502919"/>
@@ -1867,7 +1866,7 @@ button, .filter {
 										</linearGradient>
 										<path fill="url(#SVGID_7_)" d="M78.892,209.647c0,0-63.684,1.452-59.548-73.83C19.345,135.817,26.309,197.297,78.892,209.647z
 											"/>
-										
+
 											<linearGradient id="SVGID_8_" gradientUnits="userSpaceOnUse" x1="951.8776" y1="924.5019" x2="1027.199" y2="924.5019" gradientTransform="matrix(-0.7423 0.67 -0.67 -0.7423 1455.5847 77.1552)">
 											<stop  offset="0" style="stop-color:#3B1410"/>
 											<stop  offset="0.1834" style="stop-color:#502919"/>
@@ -1876,7 +1875,7 @@ button, .filter {
 										</linearGradient>
 										<path fill="url(#SVGID_8_)" d="M150.929,52.302c0,0-40.269-47.275-98.591,3.174C52.337,55.476,106.7,21.805,150.929,52.302z"
 											/>
-										
+
 											<linearGradient id="SVGID_9_" gradientUnits="userSpaceOnUse" x1="-2675.2734" y1="-1293.4803" x2="-2619.0691" y2="-1293.4803" gradientTransform="matrix(0.5277 0.8493 0.8493 -0.5277 2585.3501 1651.484)">
 											<stop  offset="0" style="stop-color:#3B1410"/>
 											<stop  offset="0.1834" style="stop-color:#502919"/>
@@ -1885,7 +1884,7 @@ button, .filter {
 										</linearGradient>
 										<path fill="url(#SVGID_9_)" d="M43.675,83.179c0,0,56.078-31.247,93.198,6.518C136.873,89.697,102.262,32.471,43.675,83.179z"
 											/>
-										
+
 											<linearGradient id="SVGID_10_" gradientUnits="userSpaceOnUse" x1="-2768.0786" y1="-930.8193" x2="-2694.7368" y2="-930.8193" gradientTransform="matrix(0.6438 0.7652 0.7652 -0.6438 2557.9155 1601.1501)">
 											<stop  offset="0" style="stop-color:#3B1410"/>
 											<stop  offset="0.1834" style="stop-color:#502919"/>
@@ -1894,7 +1893,7 @@ button, .filter {
 										</linearGradient>
 										<path fill="url(#SVGID_10_)" d="M43.471,99.183c0,0,50.104-21.261,87.028,22.626C130.499,121.809,96.969,67.691,43.471,99.183
 											z"/>
-										
+
 											<linearGradient id="SVGID_11_" gradientUnits="userSpaceOnUse" x1="-2977.1575" y1="-773.7715" x2="-2893.4783" y2="-773.7715" gradientTransform="matrix(0.8224 0.569 0.569 -0.8224 2915.7942 1197.1461)">
 											<stop  offset="0" style="stop-color:#3B1410"/>
 											<stop  offset="0.1834" style="stop-color:#502919"/>
@@ -1903,7 +1902,7 @@ button, .filter {
 										</linearGradient>
 										<path fill="url(#SVGID_11_)" d="M31.822,132.674c0,0,17.958,53.365,70.557,45.1
 											C102.379,177.774,45.134,197.711,31.822,132.674z"/>
-										
+
 											<linearGradient id="SVGID_12_" gradientUnits="userSpaceOnUse" x1="-2758.1646" y1="-951.7772" x2="-2686.707" y2="-951.7772" gradientTransform="matrix(0.6438 0.7652 0.7652 -0.6438 2557.9155 1601.1501)">
 											<stop  offset="0" style="stop-color:#3B1410"/>
 											<stop  offset="0.1834" style="stop-color:#502919"/>
@@ -2005,7 +2004,7 @@ button, .filter {
 									c-31.331-71.765-30.074-146.556-30.074-146.556s159.164,42.443,363.427-161.817c6.581,8.1,94.723,185.055,94.723,185.055
 									s14.964,48.898-26.22,111.805c0,0,58.79-48.696,71.791-82.74C629.64,444.155,645.703,378.784,645.703,353.759z"/>
 								<g>
-									
+
 										<linearGradient id="SVGID_16_" gradientUnits="userSpaceOnUse" x1="772.6558" y1="102.7029" x2="985.3578" y2="102.7029" gradientTransform="matrix(-0.9886 0.1505 0.1505 0.9886 1120.4738 -172.6003)">
 										<stop  offset="0" style="stop-color:#3B1410"/>
 										<stop  offset="0.1834" style="stop-color:#502919"/>
@@ -2014,7 +2013,7 @@ button, .filter {
 									</linearGradient>
 									<path fill="url(#SVGID_16_)" d="M370.612,35.554c0,0-104.022-17.74-205.353,64.355
 										C165.259,99.909,226.619,14.091,370.612,35.554z"/>
-									
+
 										<linearGradient id="SVGID_17_" gradientUnits="userSpaceOnUse" x1="512.2903" y1="252.9687" x2="620.1285" y2="252.9687" gradientTransform="matrix(-0.966 0.2584 0.2584 0.966 1027.7928 -85.7945)">
 										<stop  offset="0" style="stop-color:#3B1410"/>
 										<stop  offset="0.1834" style="stop-color:#502919"/>
@@ -2023,7 +2022,7 @@ button, .filter {
 									</linearGradient>
 									<path fill="url(#SVGID_17_)" d="M444.598,133.698c0,0,199.351,60.682,159.957,353.938
 										C604.555,487.635,664.541,190.835,444.598,133.698z"/>
-									
+
 										<linearGradient id="SVGID_18_" gradientUnits="userSpaceOnUse" x1="515.6821" y1="87.2381" x2="607.4606" y2="87.2381" gradientTransform="matrix(-1.0087 0.3502 0.3689 1.0625 1087.8507 -44.2152)">
 										<stop  offset="0" style="stop-color:#3B1410"/>
 										<stop  offset="0.1834" style="stop-color:#502919"/>
@@ -2032,7 +2031,7 @@ button, .filter {
 									</linearGradient>
 									<path fill="url(#SVGID_18_)" d="M450.007,96.23c0,0,148.743-5.351,178.487,307.761
 										C628.494,403.992,628.494,93.555,450.007,96.23z"/>
-									
+
 										<linearGradient id="SVGID_19_" gradientUnits="userSpaceOnUse" x1="536.4581" y1="146.1406" x2="817.6895" y2="146.1406" gradientTransform="matrix(-0.9989 -0.0467 -0.0467 0.9989 946.2015 19.9831)">
 										<stop  offset="0" style="stop-color:#3B1410"/>
 										<stop  offset="0.1834" style="stop-color:#502919"/>
@@ -2041,7 +2040,7 @@ button, .filter {
 									</linearGradient>
 									<path fill="url(#SVGID_19_)" d="M406.495,77.037c0,0-172.367-42.429-287.129,119.639
 										C119.366,196.676,201.697,31.43,406.495,77.037z"/>
-									
+
 										<linearGradient id="SVGID_20_" gradientUnits="userSpaceOnUse" x1="591.3597" y1="-28.2471" x2="861.3224" y2="-28.2471" gradientTransform="matrix(-1.1164 0.6519 0.5042 0.8635 1091.2041 -164.2081)">
 										<stop  offset="0" style="stop-color:#3B1410"/>
 										<stop  offset="0.1834" style="stop-color:#502919"/>
@@ -2050,7 +2049,7 @@ button, .filter {
 									</linearGradient>
 									<path fill="url(#SVGID_20_)" d="M411.38,187.68c0,0-161.863,41.268-281.583,209.904
 										C129.797,397.584,181.288,256.429,411.38,187.68z"/>
-									
+
 										<linearGradient id="SVGID_21_" gradientUnits="userSpaceOnUse" x1="349.0724" y1="137.6138" x2="680.7399" y2="137.6138" gradientTransform="matrix(-0.9695 0.0633 0.0406 0.9072 744.6884 137.8341)">
 										<stop  offset="0" style="stop-color:#3B1410"/>
 										<stop  offset="0.1834" style="stop-color:#502919"/>
@@ -2059,7 +2058,7 @@ button, .filter {
 									</linearGradient>
 									<path fill="url(#SVGID_21_)" d="M403.851,106.052c0,0-354.125-2.575-299.329,378.656
 										C104.523,484.708,10.224,113.738,403.851,106.052z"/>
-									
+
 										<linearGradient id="SVGID_22_" gradientUnits="userSpaceOnUse" x1="263.0153" y1="43.7536" x2="650.2787" y2="43.7536" gradientTransform="matrix(-0.8219 0.1065 0.1225 0.945 627.7811 182.8543)">
 										<stop  offset="0" style="stop-color:#3B1410"/>
 										<stop  offset="0.1834" style="stop-color:#502919"/>
@@ -2068,7 +2067,7 @@ button, .filter {
 									</linearGradient>
 									<path fill="url(#SVGID_22_)" d="M404.034,152.432c0,0-221.758,21.408-292.069,243.532
 										C111.965,395.964,166.053,152.432,404.034,152.432z"/>
-									
+
 										<linearGradient id="SVGID_23_" gradientUnits="userSpaceOnUse" x1="493.9396" y1="49.7161" x2="599.5733" y2="49.7161" gradientTransform="matrix(-1.0087 0.3502 0.3689 1.0625 1087.8507 -44.2152)">
 										<stop  offset="0" style="stop-color:#3B1410"/>
 										<stop  offset="0.1834" style="stop-color:#502919"/>
@@ -2100,7 +2099,7 @@ button, .filter {
 				</g>
 				</svg>
 			</div></a>
-	
+
 			<div class="filters" ng-show="type=='dir'">
 				<h2>Filter by date</h2>
 				<ul>
@@ -2118,12 +2117,12 @@ button, .filter {
 					<li class="filter">Date</li>
 					<li class="filter">Type</li>
 				</ul>
-				
+
 			</div>
 			<div class="details" ng-show="type!='dir'">
 				<h2>File info</h2>
 				<ul>
-					<li class="info">Created: {{file.ctime*1000 | date:'medium'}}</li>
+					<li class="info" ng-show="file.ctime">Created: {{file.ctime*1000 | date:'medium'}}</li>
 					<li class="info">Modified: {{file.mtime*1000 | date:'medium'}}</li>
 					<li class="info">Size: {{file.sizeReadable}}</li>
 					<li class="info" ng-repeat="(key, val) in file.meta">{{key}}: <b>{{val}}</b></li>
@@ -2226,7 +2225,7 @@ button, .filter {
 					<button class="login-button" type="submit"><i class="fa fa-heart"></i>&nbsp;&nbsp;&nbsp;Login</button>
 				</div>
 			</form>
-			
+
 			<div class="copyright-login">
 				<a href="http://cheryl.io" target="_blank"><span class="powered">powered by</span> <span class="cheryl">cheryl.io</span></a>
 			</div>
@@ -2240,7 +2239,7 @@ button, .filter {
 						<br><br>
 						<input type="text" ng-model="dialog.file" ng-autofocus="dialog.type == 'makeDir'">
 					</h2>
-	
+
 					<br><br><br>
 					<button type="submit">Make</button>
 					<button ng-click="dialog.no()">Cancel</button>
