@@ -7,7 +7,9 @@
  *
  */
 
-// show errors for debugging 
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+// show errors for debugging
 error_reporting(E_ALL ^ (E_NOTICE | E_STRICT));
 ini_set('display_errors',true);
 
@@ -18,18 +20,16 @@ define('CHERYL_CONTROL', true);
 // if you want better password hashing, put something here
 define('CHERYL_SALT', 'SOMETHING/NOT/COOL/AND/RANDOM');
 
-// include the Cheryl libraries
-require_once('../../lib/Cheryl.php');
 
 // give Cheryl our config. this will merge with the default config
-Cheryl::init(array(
+\Cheryl\Cheryl::init([
 	'root' => '../files',
-	'users' => array(array(
+	'users' => [[
 		'username' => 'admin',
-		'password' => Cheryl::password('password'), // remove the function and place a hashed password here so you dont have to save it in plain text
+		'password' => \Cheryl\Cheryl::password('password'), // remove the function and place a hashed password here so you dont have to save it in plain text
 		'permissions' => 'all'
-	))
-));
+	]]
+]);
 
 // manualy run the script since were using a custom config
-Cheryl::go();
+\Cheryl\Cheryl::go();

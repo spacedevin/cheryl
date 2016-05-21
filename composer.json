@@ -1,0 +1,12 @@
+{
+	"require": {
+		"tipsyphp/tipsy": "^0.11.6"
+	},
+	"autoload": {
+		"psr-4": {
+			"Cheryl\\": "src/"
+		},
+		"files": [
+		]
+	}
+}

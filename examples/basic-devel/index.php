@@ -7,7 +7,9 @@
  *
  */
 
-// show errors for debugging 
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+// show errors for debugging
 error_reporting(E_ALL ^ (E_NOTICE | E_STRICT));
 ini_set('display_errors',true);
 

@@ -9,12 +9,13 @@
 
 <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
 <link href="//fonts.googleapis.com/css?family=Open+Sans:400,300,600,700,800" rel="stylesheet">
+<link href="/cheryl.css" rel="stylesheet">
 
 </head>
 <body ng-controller="RootCtrl" ng-class="{'modal-enabled': dialog, 'global-error': (dialog && dialog.type == 'error'), 'fullscreen-editor': fullscreenEdit}" ng-body ng-drop-upload>
 	<div class="wrapper clearfix" ng-show="authed">
 		<div class="panel">
-			<a href="<?php echo Cheryl::script() ? Cheryl::script() : '/' ?>"><div class="logo">
+			<a href="/"><div class="logo">
 
 				<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
 					 width="689.318px" height="642.217px" viewBox="0 0 689.318 642.217" enable-background="new 0 0 689.318 642.217"
@@ -380,12 +381,12 @@
 				<a href="{{path()}}{{file.path}}" class="path">{{file.path ? 'Home' + (file.path == '/' ? '' : file.path) : ''}}</a>
 			</div>
 			<div class="actions">
-				<button title="Fullscreen editor" class="fullscreen-button" ng-show="file.writeable && file.name && type!='dir' && file.type == 'text'" ng-fullscreen-editor><i class="fa fa-expand"></i></button><?php
-				?><button title="Save this file" class="save-button" ng-save ng-show="file.writeable && file.name && type!='dir' && file.type == 'text'"><i class="fa fa-floppy-o"></i></button><?php
-				?><button title="Delete this {{type=='dir' ? 'folder' : 'file'}}" class="delete-button" ng-delete ng-show="file.writeable && file.name"><i class="fa fa-trash-o"></i></button><?php
-				?><a href="#NewFile"><button title="Create a new file" class="create-file-button" ng-make-file ng-show="file.writeable && type=='dir'"><i class="fa fa-file-text"></i></button></a><?php
-				?><button title="Create a new folder" class="create-folder-button" ng-make-dir ng-show="file.writeable && type=='dir'"><i class="fa fa-folder"></i></button><?php
-				?><button title="Upload a file" class="upload-button" ng-upload ng-show="file.writeable && type=='dir'"><i class="fa fa-cloud-upload"></i></button>
+				<button title="Fullscreen editor" class="fullscreen-button" ng-show="file.writeable && file.name && type!='dir' && file.type == 'text'" ng-fullscreen-editor><i class="fa fa-expand"></i></button>
+				<button title="Save this file" class="save-button" ng-save ng-show="file.writeable && file.name && type!='dir' && file.type == 'text'"><i class="fa fa-floppy-o"></i></button>
+				<button title="Delete this {{type=='dir' ? 'folder' : 'file'}}" class="delete-button" ng-delete ng-show="file.writeable && file.name"><i class="fa fa-trash-o"></i></button>
+				<a href="#NewFile"><button title="Create a new file" class="create-file-button" ng-make-file ng-show="file.writeable && type=='dir'"><i class="fa fa-file-text"></i></button></a>
+				<button title="Create a new folder" class="create-folder-button" ng-make-dir ng-show="file.writeable && type=='dir'"><i class="fa fa-folder"></i></button>
+				<button title="Upload a file" class="upload-button" ng-upload ng-show="file.writeable && type=='dir'"><i class="fa fa-cloud-upload"></i></button>
 			</div>
 			<div class="uploads" ng-show="type=='dir'">
 				<a class="file upload-item clearfix" ng-repeat="upload in uploads">
@@ -435,7 +436,6 @@
 			</div>
 			<div class="file-contents" ng-show="type!='dir'">
 				<div id="editor" ng-show="file.contents"></div>
-				<?php /*<div class="file-image" style="background: url(/Files/{{file.path}}/{{file.name}})"></div> */ ?>
 			</div>
 		</div>
 		<div class="copyright">
@@ -504,8 +504,8 @@
 </body>
 <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.3/angular.min.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.1/angular-route.min.js"></script>
-
 <script src="//cdnjs.cloudflare.com/ajax/libs/ace/1.1.01/ace.js"></script>
+<script src="/cheryl.js"></script>
 
 <script>
 /* http://caligatio.github.com/jsSHA/ */

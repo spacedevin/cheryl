@@ -25,7 +25,7 @@ var Cheryl =
 		    var param = function(obj) {
 				var query = '';
 				var name, value, fullSubName, subValue, innerObj, i;
-		      
+
 				for (name in obj) {
 					value = obj[name];
 					if (value instanceof Array || value instanceof Object) {
@@ -51,18 +51,18 @@ var Cheryl =
 		$scope.now = new Date;
 		$scope.yesterday = new Date;
 		$scope.yesterday.setDate($scope.yesterday.getDate() - 1);
-		
+
 		$scope.user = [];
 		$scope.welcomeDefault = $scope.welcome = 'Welcome!';
-		
+
 		$scope.types = [];
 		$scope.dates = [];
 		$scope.type = 'dir';
 		$scope.dialog = false;
 		$scope.config = false;
-		
+
 		$scope.dateFormat = 'm/d/Y H:i:s';
-		
+
 		$scope.path = function() {
 			return $scope.script;
 		};
@@ -70,11 +70,11 @@ var Cheryl =
 		$scope.dirPath = function() {
 			return $location.path().replace($scope.script,'') || '/';
 		};
-		
+
 		var password = function() {
 			return encodeURIComponent(new jsSHA($scope.user.password + '<?php echo CHERYL_SALT; ?>', 'TEXT').getHash('SHA-1', 'HEX'));
 		};
-		
+
 		$scope.getConfig = function() {
 			$http({method: 'GET', url: $scope.path() + '?__p=config'}).
 				success(function(data) {
@@ -84,7 +84,7 @@ var Cheryl =
 					}
 				});
 		};
-		
+
 		$scope.login = function() {
 			$http.post($scope.path() + '/', {'__p': 'login', '__username': $scope.user.username, '__hash': password()}).
 				success(function(data) {
@@ -98,12 +98,12 @@ var Cheryl =
 				}).
 				error(function(data) {
 					$scope.welcome = 'Try again!';
-				});	
+				});
 		};
-		
+
 		$scope.authed = false;
-		$scope.script = '<?php echo Cheryl::script() ?>';
-		
+		$scope.script = '/';
+
 		$scope.dateFilterNames = {
 			0: 'Today',
 			1: 'Last week',
@@ -117,9 +117,9 @@ var Cheryl =
 			dates: [],
 			search: ''
 		};
-		
+
 		$scope.uploads = [];
-		
+
 		$scope.filter = function(filter, value) {
 			switch (filter) {
 				case 'recursive':
@@ -138,11 +138,11 @@ var Cheryl =
 					if (!hasValue) {
 						$scope.filters[filter] = [];
 					}
-					
+
 					break;
 				}
 		};
-		
+
 		$scope.filterFiles = function(file) {
 			if (Object.size($scope.filters.types)) {
 				if (!$scope.filters.types[file.ext.toUpperCase()]) {
@@ -159,18 +159,18 @@ var Cheryl =
 			}
 			return true;
 		};
-		
+
 		$scope.filterFolders = function(file) {
 			if ($scope.filters.search && file.name.indexOf($scope.filters.search) === -1) {
 				return false;
 			}
 			return true;
 		};
-		
+
 		$scope.filterCheck = function(filter, value) {
 			return $scope.filters[filter][value];
 		};
-		
+
 		var formatDate = function(file) {
 			var time = new Date(file.mtime * 1000);
 			var timeOfDay = (time.getHours() > 12 ? time.getHours() - 12 : time.getHours()) + ':' + time.getMinutes() + (time.getHours() > 12 ? ' PM' : ' AM');
@@ -179,7 +179,7 @@ var Cheryl =
 			if ('' + time.getFullYear() + time.getMonth() + time.getDate() == '' + $scope.now.getFullYear() + $scope.now.getMonth() + $scope.now.getDate()) {
 				file.dateReadable = 'Today @ ' + timeOfDay;
 				file.dateFilter = 0;
-				
+
 			} else if ('' + time.getFullYear() + time.getMonth() + time.getDate() == '' + $scope.yesterday.getFullYear() + $scope.yesterday.getMonth() + $scope.yesterday.getDate()) {
 				file.dateReadable = 'Yesterday @ ' + timeOfDay;
 				file.dateFilter = 1;
@@ -203,10 +203,10 @@ var Cheryl =
 				file.dateReadable = years + ' year' + (years == 1 ? '' : 's') + ' ago';
 				file.dateFilter = 3;
 			}
-			
+
 			$scope.dates[file.dateFilter] = $scope.dates[file.dateFilter] ? $scope.dates[file.dateFilter] + 1 : 1;
 		};
-		
+
 		$scope.formatSize = function(file) {
 			var size = file.size;
 			var i = -1;
@@ -217,7 +217,7 @@ var Cheryl =
 			} while (size > 1024);
 			file.sizeReadable = Math.max(size, 0.1).toFixed(1) + byteUnits[i];
 		};
-		
+
 		$scope.loadFiles = function() {
 			if (!$scope.config) {
 				$scope.getConfig();
@@ -233,7 +233,7 @@ var Cheryl =
 			for (var x in $scope.filters) {
 				url += '&filters[' + x + ']=' + $scope.filters[x];
 			}
-			
+
 			$http({method: 'GET', url: url}).
 				success(function(data) {
 					$scope.type = data.type;
@@ -243,7 +243,7 @@ var Cheryl =
 					if (data.type == 'dir') {
 						$scope.files = data.list.files;
 						$scope.dirs = data.list.dirs;
-						
+
 						$scope.types = {};
 						$scope.dates = {};
 
@@ -261,14 +261,14 @@ var Cheryl =
 				}).
 				error(function() {
 					$scope.files = null;
-				});	
+				});
 		};
 
 		$scope.$watch('filters.recursive', $scope.loadFiles);
 		$scope.$watch('authed', $scope.loadFiles);
 		$scope.$on('$locationChangeSuccess', function() {
 			$anchorScroll();
-			
+
 			switch ($location.$$hash) {
 				case 'NewFile':
 					break;
@@ -278,7 +278,7 @@ var Cheryl =
 					break;
 			}
 		});
-		
+
 		$scope.modes = {
 			php: 'php',
 			js: 'javascript',
@@ -290,7 +290,7 @@ var Cheryl =
 			c: 'c',
 			sql: 'mysql'
 		};
-		
+
 		$scope.$watch('file.contents', function() {
 			if (!$scope.file || !$scope.file.contents) {
 				return;
@@ -313,7 +313,7 @@ var Cheryl =
 					}
 				});
 			}
-			
+
 			var mode = 'text';
 			for (var x in $scope.modes) {
 				if (x == $scope.file.ext) {
@@ -329,7 +329,7 @@ var Cheryl =
 
 			fullscreenToggle();
 		});
-		
+
 		var fullscreenToggle = function() {
 			if (!$scope.editor) {
 				return;
@@ -365,7 +365,7 @@ var Cheryl =
 			var iframe = document.getElementById('downloader');
 			iframe.src = $scope.path() + '?__p=dl&_d=' + file.path + '/' + file.name;
 		};
-		
+
 		$scope.saveFile = function() {
 			$scope.$apply(function() {
 				var error = function() {
@@ -386,7 +386,7 @@ var Cheryl =
 				error(error);
 			});
 		};
-		
+
 		$scope.upload = function(event, scope) {
 			var files = event.target.files || event.dataTransfer.files;
 
@@ -397,9 +397,9 @@ var Cheryl =
 				if (xhr.upload && file.size <= 9000000000) {
 					var fd = new FormData();
 					fd.append(file.name, file);
-					
+
 					scope.$apply(function() {
-					
+
 						var upload = {
 							name: file.name,
 							path: $location.path(),
@@ -454,13 +454,13 @@ var Cheryl =
 	})
 	.directive('ngDropUpload', function () {
 		return function (scope, element) {
-	
+
 			var dragEnd = function() {
 				scope.$apply(function() {
 					scope.dialog = false;
 				});
 			};
-			
+
 			var autoEndClean;
 
 			angular.element(document).bind('dragover', function(event) {
@@ -525,9 +525,9 @@ var Cheryl =
 										error();
 									}
 								}).
-								error(error);	
+								error(error);
 						}
-					};					
+					};
 				});
 			});
 		};
@@ -555,9 +555,9 @@ var Cheryl =
 										error();
 									}
 								}).
-								error(error);	
+								error(error);
 						}
-					};					
+					};
 				});
 			});
 		};
@@ -583,7 +583,7 @@ var Cheryl =
 			element.bind('click', function(event) {
 				if (event.target == element[0]) {
 					scope.$apply(function() {
-						scope.dialog = false;					
+						scope.dialog = false;
 					});
 				}
 			});
@@ -595,7 +595,7 @@ var Cheryl =
 				if (event.which == 27) {
 					scope.$apply(function() {
 						scope.dialog = false;
-						scope.fullscreenEdit = false;			
+						scope.fullscreenEdit = false;
 					});
 				}
 			});
@@ -627,7 +627,7 @@ var Cheryl =
 							error();
 						}
 					}).
-					error(error);	
+					error(error);
 			};
 			element
 				.bind('change', function(event) {

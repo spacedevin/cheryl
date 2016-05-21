@@ -1,0 +1,69 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "This file is @generated automatically"
+    ],
+    "hash": "a3cc9089b5256e7da65b03b416f05555",
+    "content-hash": "626e93be784c1a8488adbca9039bc3fa",
+    "packages": [
+        {
+            "name": "tipsyphp/tipsy",
+            "version": "v0.11.6",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/tipsyphp/tipsy.git",
+                "reference": "eb2b11301b2fbf178fddf27cb0d5070fcf69f99a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/tipsyphp/tipsy/zipball/eb2b11301b2fbf178fddf27cb0d5070fcf69f99a",
+                "reference": "eb2b11301b2fbf178fddf27cb0d5070fcf69f99a",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.5.0"
+            },
+            "require-dev": {
+                "satooshi/php-coveralls": "dev-master"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Tipsy\\": "src/"
+                },
+                "files": [
+                    "src/Tipsy.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Devin Smith",
+                    "email": "devin@tipsy.la",
+                    "homepage": "http://devin.la",
+                    "role": "Developer"
+                }
+            ],
+            "description": "An MVW PHP framework",
+            "keywords": [
+                "framework",
+                "mvc",
+                "mvw",
+                "php"
+            ],
+            "time": "2014-07-24 00:00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": []
+}
