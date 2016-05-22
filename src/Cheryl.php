@@ -107,9 +107,9 @@ class Cheryl {
 		$config = Cheryl_Model::toModel($config);
 
 		$this->config = $config;
+		$this->_tipsy = new \Tipsy\Tipsy;
 
 		$this->_setup();
-		$this->_digestRequest();
 		$this->_authenticate();
 	}
 
@@ -128,7 +128,7 @@ class Cheryl {
 
 	public function _request() {
 		$_REQUEST['__url'] = $_REQUEST['__p'];
-		$tipsy = new \Tipsy\Tipsy;
+		$tipsy = $this->_tipsy;
 		$self = $this;
 
 		$tipsy
