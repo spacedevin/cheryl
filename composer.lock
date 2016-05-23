@@ -4,21 +4,21 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "a3cc9089b5256e7da65b03b416f05555",
+    "hash": "b92738d92f228828fc0ddc8dcd62c707",
     "content-hash": "626e93be784c1a8488adbca9039bc3fa",
     "packages": [
         {
             "name": "tipsyphp/tipsy",
-            "version": "v0.11.6",
+            "version": "v0.11.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/tipsyphp/tipsy.git",
-                "reference": "eb2b11301b2fbf178fddf27cb0d5070fcf69f99a"
+                "reference": "ef96e549ce95aea76879e696d351f85821447f03"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/tipsyphp/tipsy/zipball/eb2b11301b2fbf178fddf27cb0d5070fcf69f99a",
-                "reference": "eb2b11301b2fbf178fddf27cb0d5070fcf69f99a",
+                "url": "https://api.github.com/repos/tipsyphp/tipsy/zipball/ef96e549ce95aea76879e696d351f85821447f03",
+                "reference": "ef96e549ce95aea76879e696d351f85821447f03",
                 "shasum": ""
             },
             "require": {

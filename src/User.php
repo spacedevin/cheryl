@@ -5,23 +5,24 @@ namespace Cheryl;
 class User extends \Cheryl\User_Base {
 
 	public static function users() {
-		return Cheryl::me()->config->users;
+		return Cheryl::me()->config['users'];
 	}
 
 	public function __construct($u) {
 		if (is_string($u)) {
-			$type = strtolower(Cheryl::me()->config->authentication->type);
+			$type = strtolower(Cheryl::me()->config['authentication']['type']);
 
 			if ($type == 'simple') {
 				foreach (self::users() as $user) {
-					if ($user->username == $u) {
+					if ($user['username'] == $u) {
 						$u = $user;
 						break;
 					}
 				}
+
 			} elseif ($type == 'pdo' && class_exists('PDO')) {
 
-				$q = Cheryl::me()->config->authentication->pdo->prepare('SELECT * FROM '.Cheryl::me()->config->authentication->permission_table.' WHERE user=:username');
+				$q = Cheryl::me()->config->authentication->pdo->prepare('SELECT * FROM '.Cheryl::me()->config['authentication']['permission_table'].' WHERE user=:username');
 				$q->bindValue(':username', $u, PDO::PARAM_STR);
 				$q->execute();
 				$rows = $q->fetchAll(PDO::FETCH_ASSOC);
@@ -39,29 +40,26 @@ class User extends \Cheryl\User_Base {
 	}
 
 	public static function login() {
-		if (Cheryl::me()->request['__username']) {
+		if (Cheryl::me()->tipsy()->request()->request()['__username']) {
 			// log in attempt
-			if (Cheryl::me()->request['__hash']) {
-				$pass = Cheryl::me()->request['__hash'];
-			} else {
-				$pass = self::password(Cheryl::me()->request['__password']);
-			}
+			$pass = Cheryl::me()->tipsy()->request()->request()['__password'];
 		} else {
 			return false;
 		}
 
-		$type = strtolower(Cheryl::me()->config->authentication->type);
+		$type = strtolower(Cheryl::me()->config['authentication']['type']);
 
 		// simple authentication. store users in an array
 		if ($type == 'simple') {
 			foreach (self::users() as $user) {
-				if ($user->username == Cheryl::me()->request['__username']) {
+
+				if ($user['username'] == Cheryl::me()->tipsy()->request()->request()['__username']) {
 					$u = $user;
 					break;
 				}
 			}
 
-			if ($u && (!$u->password || $pass == $u->password)) {
+			if ($u && (!$u['password'] || password_verify($pass, $u['password']))) {
 				// successfuly send username and password
 				return new User($u);
 			}
@@ -72,7 +70,7 @@ class User extends \Cheryl\User_Base {
 		} elseif ($type == 'pdo' && class_exists('PDO')) {
 
 			$q = Cheryl::me()->config->authentication->pdo->prepare('SELECT * FROM '.Cheryl::me()->config->authentication->user_table.' WHERE user=:username AND hash=:hash LIMIT 1');
-			$q->bindValue(':username', Cheryl::me()->request['__username'], PDO::PARAM_STR);
+			$q->bindValue(':username', Cheryl::tipsy()->request()->request()['__username'], PDO::PARAM_STR);
 			$q->bindValue(':hash', $pass, PDO::PARAM_STR);
 			$q->execute();
 			$rows = $q->fetchAll(PDO::FETCH_ASSOC);

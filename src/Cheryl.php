@@ -104,18 +104,13 @@ class Cheryl {
 		}
 
 		$config = array_merge($this->defaultConfig, $config);
-		$config = Cheryl_Model::toModel($config);
 
 		$this->config = $config;
 		$this->_tipsy = new \Tipsy\Tipsy;
+		$this->_digestRequest();
 
 		$this->_setup();
 		$this->_authenticate();
-	}
-
-	public static function password($password) {
-		// just a pinch
-		return sha1($password.CHERYL_SALT);
 	}
 
 	public static function me() {
@@ -127,11 +122,10 @@ class Cheryl {
 	}
 
 	public function _request() {
-		$_REQUEST['__url'] = $_REQUEST['__p'];
-		$tipsy = $this->_tipsy;
+		$this->tipsy()->request()->path($this->tipsy()->request()->request()['__p']);
 		$self = $this;
 
-		$tipsy
+		$this->tipsy()
 			->get('logout', function() use ($self) {
 				$self->_logout();
 				echo json_encode(array('status' => true, 'message' => 'logged out'));
@@ -179,45 +173,39 @@ class Cheryl {
 				$View->display('cheryl');
 			});
 
-		$tipsy->run();
+		$this->tipsy()->run();
 	}
 
 	public function _setup() {
 
 		$this->features = (object)$this->features;
 
-		if (file_exists($this->config->includes)) {
+		if (file_exists($this->config['includes'])) {
 			// use include root at script level
-			$this->config->includes = realpath($this->config->includes).DIRECTORY_SEPARATOR;
+			$this->config['includes'] = realpath($this->config['includes']).DIRECTORY_SEPARATOR;
 
-		} elseif (file_exists(dirname(__FILE__).DIRECTORY_SEPARATOR.$this->config->includes)) {
+		} elseif (file_exists(dirname(__FILE__).DIRECTORY_SEPARATOR.$this->config['includes'])) {
 			// use include root at lib level
-			$this->config->includes = dirname(__FILE__).DIRECTORY_SEPARATOR.$this->config->includes.DIRECTORY_SEPARATOR;
+			$this->config['includes'] = dirname(__FILE__).DIRECTORY_SEPARATOR.$this->config['includes'].DIRECTORY_SEPARATOR;
 
 		} else {
 			// use current path
-			$this->config->includes = realpath(__FILE__).DIRECTORY_SEPARATOR;
+			$this->config['includes'] = realpath(__FILE__).DIRECTORY_SEPARATOR;
 		}
 
-		if (!$this->config->root) {
-			$this->config->root = dirname($_SERVER['SCRIPT_FILENAME']).DIRECTORY_SEPARATOR;
+		if (!$this->config['root']) {
+			$this->config['root'] = dirname($_SERVER['SCRIPT_FILENAME']).DIRECTORY_SEPARATOR;
 		} else {
-			$this->config->root = dirname($_SERVER['SCRIPT_FILENAME']).DIRECTORY_SEPARATOR.$this->config->root.DIRECTORY_SEPARATOR;
+			$this->config['root'] = dirname($_SERVER['SCRIPT_FILENAME']).DIRECTORY_SEPARATOR.$this->config['root'].DIRECTORY_SEPARATOR;
 
-			if (!file_exists($this->config->root)) {
-				@mkdir($this->config->root);
-				@chmod($this->config->root, 0777);
+			if (!file_exists($this->config['root'])) {
+				@mkdir($this->config['root']);
+				@chmod($this->config['root'], 0777);
 			}
 		}
 
 		if ((function_exists('apache_get_modules') && in_array('mod_rewrite', apache_get_modules())) || getenv('HTTP_MOD_REWRITE') == 'On') {
 			$this->features->rewrite = true;
-		}
-
-		if (!function_exists('json_decode')) {
-			if (file_exists($this->config->includes.'Cheryl/Library/JSON.php')) {
-				require_once($this->config->includes.'Cheryl/Library/JSON.php');
-			}
 		}
 
 		if (function_exists('json_decode')) {
@@ -227,12 +215,15 @@ class Cheryl {
 		if (function_exists('exif_read_data')) {
 			$this->features->exif = true;
 		}
+
 		if (function_exists('getimagesize')) {
 			$this->features->gd = true;
 		}
+
 		if (function_exists('Imagick::identifyImage')) {
 			$this->features->imlib = true;
 		}
+
 		if (!$this->features->imlib) {
 			$o = shell_exec('identify -version 2>&1');
 			if (!strpos($o, 'not found')) {
@@ -290,18 +281,7 @@ class Cheryl {
 	}
 
 	public function _digestRequest() {
-		if (strtolower($_SERVER['REQUEST_METHOD']) == 'post' && !$_REQUEST['__p']) {
-			if (!$this->features->json) {
-				header('Status: 400 Bad Request');
-				header('HTTP/1.0 400 Bad Request');
-				echo json_encode(array('status' => false, 'JSON is not installed on this server. requests must use query strings'));
-			} else {
-				$this->request = json_decode(file_get_contents('php://input'),true);
-			}
-		} else {
-			$this->request = $_REQUEST;
-		}
-
+		/*
 		if ($this->request['__p']) {
 			// we have a page param result
 			$url = explode('/',$this->request['__p']);
@@ -310,19 +290,20 @@ class Cheryl {
 		} else {
 			$url = false;
 		}
+		*/
 
-		$this->requestPath = $url;
+		$this->request = $this->tipsy()->request()->request();
 
 		// sanatize file/directory requests
 		if ($this->request['_d']) {
 			$this->request['_d'] = str_replace('/',DIRECTORY_SEPARATOR, $this->request['_d']);
-			if ($this->config->features->snooping) {
+			if ($this->config['features']['snooping']) {
 				// just allow them to enter any old damn thing
-				$this->requestDir = $this->config->root.$this->request['_d'];
+				$this->requestDir = $this->config['root'].$this->request['_d'];
 			} else {
 				$this->requestDir = preg_replace('/\.\.\/|\.\//i','',$this->request['_d']);
 				//$this->requestDir = preg_replace('@^'.DIRECTORY_SEPARATOR.basename(__FILE__).'@','',$this->requestDir);
-				$this->requestDir = $this->config->root.$this->requestDir;
+				$this->requestDir = $this->config['root'].$this->requestDir;
 			}
 
 			if (file_exists($this->requestDir)) {
@@ -341,11 +322,11 @@ class Cheryl {
 	public function _getFiles($dir, $filters = array()) {
 
 		if ($filters['recursive']) {
-			$iter = new RecursiveDirectoryIterator($dir);
-			$iterator = new RecursiveIteratorIterator(
+			$iter = new \RecursiveDirectoryIterator($dir);
+			$iterator = new \RecursiveIteratorIterator(
 				$iter,
-				RecursiveIteratorIterator::SELF_FIRST,
-				RecursiveIteratorIterator::CATCH_GET_CHILD
+				\RecursiveIteratorIterator::SELF_FIRST,
+				\RecursiveIteratorIterator::CATCH_GET_CHILD
 			);
 
 			$filtered = new CherylFilterIterator($iterator);
@@ -365,7 +346,7 @@ class Cheryl {
 		} else {
 			$iter = new CherylDirectoryIterator($dir);
 			$filter = new CherylFilterIterator($iter);
-			$iterator = new IteratorIterator($filter);
+			$iterator = new \IteratorIterator($filter);
 
 			$paths = array($dir);
 			foreach ($iterator as $path => $file) {
@@ -413,7 +394,7 @@ class Cheryl {
 	}
 
 	public function _getFileInfo($file, $extended = false) {
-		$path = str_replace(realpath($this->config->root),'',realpath($file->getPath()));
+		$path = str_replace(realpath($this->config['root']),'',realpath($file->getPath()));
 
 		if ($file->isDir()) {
 			$info = array(
@@ -463,7 +444,7 @@ class Cheryl {
 								$exifInfo[$key] = $exif[$key];
 							}
 							if ($exif['DateTime']) {
-								$d = new DateTime($exif['DateTime']);
+								$d = new \DateTime($exif['DateTime']);
 								$exifInfo['Created'] = $d->getTimestamp();
 							} elseif ($exif['FileDateTime']) {
 								$exifInfo['Created'] = $exif['FileDateTime'];
@@ -506,7 +487,7 @@ class Cheryl {
 	}
 
 	public function _getFile($download = false) {
-		if (!$this->authed && !$this->config->readonly) {
+		if (!$this->authed && !$this->config['readonly']) {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
 		}
@@ -517,7 +498,7 @@ class Cheryl {
 			exit;
 		}
 
-		$file = new SplFileObject($this->requestDir);
+		$file = new \SplFileObject($this->requestDir);
 
 		// not really sure if this range shit works. stole it from an old script i wrote
 		if (isset($_SERVER['HTTP_RANGE'])) {
@@ -578,7 +559,7 @@ class Cheryl {
 	}
 
 	public function _requestList() {
-		if (!$this->authed && !$this->config->readonly) {
+		if (!$this->authed && !$this->config['readonly']) {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
 		}
@@ -590,18 +571,18 @@ class Cheryl {
 		}
 
 		if (is_file($this->requestDir)) {
-			$file = new SplFileObject($this->requestDir);
+			$file = new \SplFileObject($this->requestDir);
 			$info = $this->_getFileInfo($file, true);
 			echo json_encode(array('type' => 'file', 'file' => $info));
 
 		} else {
 
-			if (realpath($this->requestDir) == realpath($this->config->root)) {
+			if (realpath($this->requestDir) == realpath($this->config['root'])) {
 				$path = '';
 				$name = '';
 			} else {
 				$dir = pathinfo($this->requestDir);
-				$path = str_replace(realpath($this->config->root),'',realpath($dir['dirname']));
+				$path = str_replace(realpath($this->config['root']),'',realpath($dir['dirname']));
 				$name = basename($this->requestDir);
 				$path = $path{0} == '/' ? $path : '/'.$path;
 			}
@@ -623,7 +604,7 @@ class Cheryl {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
 		}
-		if ($this->config->readonly || !$this->user->permission('upload', $this->requestDir)) {
+		if ($this->config['readonly'] || !$this->user->permission('upload', $this->requestDir)) {
 			echo json_encode(array('status' => false, 'message' => 'no permission'));
 			exit;
 		}
@@ -640,7 +621,7 @@ class Cheryl {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
 		}
-		if ($this->config->readonly || !$this->user->permission('delete', $this->requestDir)) {
+		if ($this->config['readonly'] || !$this->user->permission('delete', $this->requestDir)) {
 			echo json_encode(array('status' => false, 'message' => 'no permission'));
 			exit;
 		}
@@ -648,8 +629,8 @@ class Cheryl {
 		$status = false;
 
 		if (is_dir($this->requestDir)) {
-			if ($this->config->recursiveDelete) {
-				foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($this->requestDir), RecursiveIteratorIterator::CHILD_FIRST) as $path) {
+			if ($this->config['recursiveDelete']) {
+				foreach(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($this->requestDir), \RecursiveIteratorIterator::CHILD_FIRST) as $path) {
 					if ($path->getFilename() == '.' || $path->getFilename() == '..') {
 						continue;
 					}
@@ -675,7 +656,7 @@ class Cheryl {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
 		}
-		if ($this->config->readonly || !$this->user->permission('rename', $this->requestDir)) {
+		if ($this->config['readonly'] || !$this->user->permission('rename', $this->requestDir)) {
 			echo json_encode(array('status' => false, 'message' => 'no permission'));
 			exit;
 		}
@@ -694,7 +675,7 @@ class Cheryl {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
 		}
-		if ($this->config->readonly || !$this->user->permission('create', $this->requestDir)) {
+		if ($this->config['readonly'] || !$this->user->permission('create', $this->requestDir)) {
 			echo json_encode(array('status' => false, 'message' => 'no permission'));
 			exit;
 		}
@@ -713,7 +694,7 @@ class Cheryl {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
 			exit;
 		}
-		if ($this->config->readonly || !$this->user->permission('save', $this->requestDir)) {
+		if ($this->config['readonly'] || !$this->user->permission('save', $this->requestDir)) {
 			echo json_encode(array('status' => false, 'message' => 'no permission'));
 			exit;
 		}
@@ -728,15 +709,22 @@ class Cheryl {
 	}
 
 	public function _getConfig() {
-		echo json_encode(array('status' => true, 'authed' => $this->authed));
+		echo json_encode([
+			'status' => true,
+			'authed' => $this->authed
+		]);
 	}
 
 	public static function iteratorFilter($current) {
         return !in_array(
             $current->getFileName(),
-            self::me()->config->hiddenFiles,
+            self::me()->config['hiddenFiles'],
             true
         );
+	}
+
+	public function tipsy() {
+		return $this->_tipsy;
 	}
 }
 
@@ -755,65 +743,5 @@ class CherylDirectoryIterator extends \DirectoryIterator {
 			$ext = pathinfo($this->getPathName(), PATHINFO_EXTENSION);
 		}
 		return strtolower($ext);
-	}
-}
-
-
-class Cheryl_Model {
-	public static function toModel($array) {
-
-		$object = new Cheryl_Model();
-		if (is_array($array) && count($array) > 0) {
-			foreach ($array as $name => $value) {
-				if ($name === 0) {
-					$isArray = true;
-				}
-
-				if (!empty($name) || $name === 0) {
-
-					if (is_array($value)) {
-						if (!count($value)) {
-                    		$value = null;
-						} else {
-							$value = self::toModel($value);
-						}
-                    }
-					if ($isArray) {
-						switch ($value) {
-							case 'false':
-								$array[$name] = false;
-								break;
-							case 'true':
-								$array[$name] = true;
-								break;
-							case 'null':
-								$array[$name] = null;
-								break;
-							default:
-								$array[$name] = $value;
-								break;
-						}
-					} else {
-						$name = trim($name);
-						switch ($value) {
-							case 'false':
-								$object->$name = false;
-								break;
-							case 'true':
-								$object->$name = true;
-								break;
-							case 'null':
-								$object->$name = null;
-								break;
-							default:
-								$object->$name = $value;
-								break;
-						}
-					}
-				}
-			}
-		}
-
-		return $isArray ? $array : $object;
 	}
 }

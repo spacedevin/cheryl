@@ -17,33 +17,6 @@ var Cheryl =
 				controller: 'RootCtrl'
 			});
 	})
-	// Convert angulars json payload to the querystring standard so old versions of apache/php can understand
-	.config(function($httpProvider) {
-		$httpProvider.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded;charset=utf-8';
-		$httpProvider.defaults.transformRequest = [function(data) {
-
-		    var param = function(obj) {
-				var query = '';
-				var name, value, fullSubName, subValue, innerObj, i;
-
-				for (name in obj) {
-					value = obj[name];
-					if (value instanceof Array || value instanceof Object) {
-						for (var subName in value) {
-							innerObj = {};
-							innerObj[name + '[' + subName + ']'] = value[subName];
-							query += param(innerObj) + '&';
-						}
-					} else if(value !== undefined && value !== null) {
-						query += encodeURIComponent(name) + '=' + encodeURIComponent(value) + '&';
-					}
-				}
-				return query.length ? query.substr(0, query.length - 1) : query;
-			};
-
-			return angular.isObject(data) && String(data) !== '[object File]' ? param(data) : data;
-		}];
-	})
 	.config(function($locationProvider){
 		$locationProvider.html5Mode(true).hashPrefix('!');
 	})
@@ -64,15 +37,11 @@ var Cheryl =
 		$scope.dateFormat = 'm/d/Y H:i:s';
 
 		$scope.path = function() {
-			return $scope.script;
+			return location.href + $scope.script;
 		};
 
 		$scope.dirPath = function() {
 			return $location.path().replace($scope.script,'') || '/';
-		};
-
-		var password = function() {
-			return encodeURIComponent(new jsSHA($scope.user.password + '<?php echo CHERYL_SALT; ?>', 'TEXT').getHash('SHA-1', 'HEX'));
 		};
 
 		$scope.getConfig = function() {
@@ -86,7 +55,7 @@ var Cheryl =
 		};
 
 		$scope.login = function() {
-			$http.post($scope.path() + '/', {'__p': 'login', '__username': $scope.user.username, '__hash': password()}).
+			$http.post($scope.path(), {'__p': 'login', '__username': $scope.user.username, '__password': $scope.user.password}).
 				success(function(data) {
 					if (data.status) {
 						$scope.welcome = $scope.welcomeDefault;
@@ -102,7 +71,7 @@ var Cheryl =
 		};
 
 		$scope.authed = false;
-		$scope.script = '/';
+		$scope.script = '';
 
 		$scope.dateFilterNames = {
 			0: 'Today',
@@ -432,7 +401,7 @@ var Cheryl =
 							},5000);
 						};
 
-						xhr.open('POST', scope.path() + '/?__p=ul&_d=' + scope.dirPath(), true);
+						xhr.open('POST', scope.path() + '?__p=ul&_d=' + scope.dirPath(), true);
 						xhr.setRequestHeader('X-File-Name', file.name);
 						xhr.send(fd);
 					});
