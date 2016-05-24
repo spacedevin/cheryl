@@ -1,4 +1,4 @@
-Cheryl 3.0
+Cheryl 4.0 Beta
 ---
 
 Cheryl is a web based file manager for the modern web. Built on top of PHP5 and AngularJS with lots of love from HTML5 and CSS3 animations.
@@ -6,7 +6,6 @@ Cheryl is a web based file manager for the modern web. Built on top of PHP5 and 
 ---
 
 ### Features
-- Single file instalation
 - Ace editor for text files for direct editing an saving
 - Multiple HTML5 uploads
 - Recursive browsing to only show recently modified files, in any folder
@@ -14,6 +13,16 @@ Cheryl is a web based file manager for the modern web. Built on top of PHP5 and 
 - Completly separate AngularJS frontend
 - Custom languages
 - Custom themes
+
+
+---
+
+#### Deploying on Heroku
+
+Deploying on Heroku will use Nginx and Postgres.
+
+[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+
 
 
 
@@ -24,8 +33,6 @@ Cheryl is a web based file manager for the modern web. Built on top of PHP5 and 
 4. Open the path in your browser
 5. Login with your user/pass. Default is u: **admin**, p: **password**.
 
-*note: if you are not interested in developing for Chery, just ignore the **lib** folder.*
-
 #### Older versions
 ##### 1.1 - https://github.com/arzynik/osFileManager/tree/static
 Single file, no MySQL required
@@ -34,6 +41,5 @@ Single file, no MySQL required
 Multiple files. Supports multiple users. Requires MySQL
 
 
-
 ---
-*Made by Devin, 2003-2013*
+*Made by Devin, 2003-2016*

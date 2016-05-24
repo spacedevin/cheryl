@@ -1,0 +1,11 @@
+{
+	"name": "Cheryl",
+	"description": "Web based file management for the modern web",
+	"website": "http://cheryl.io",
+	"repository": "https://github.com/arzynik/cheryl",
+	"keywords": ["cheryl", "tipsy", "php", "file", "manager"],
+	"addons": ["heroku-postgresql"],
+	"scripts": {
+		"postdeploy": "php install/install.php"
+	}
+}
