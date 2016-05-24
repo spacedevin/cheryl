@@ -58,36 +58,6 @@ class User extends \Tipsy\Resource {
 				}
 				break;
 		}
-
-/*
-		if (is_string($u)) {
-			$type = strtolower(Cheryl::me()->config['authentication']['type']);
-
-			if ($type == 'simple') {
-				foreach (self::users() as $user) {
-					if ($user['username'] == $u) {
-						$u = $user;
-						break;
-					}
-				}
-
-			} elseif ($type == 'pdo' && class_exists('PDO')) {
-
-				$q = Cheryl::me()->config['authentication']['pdo']->prepare('SELECT * FROM '.Cheryl::me()->config['authentication']['permission_table'].' WHERE user=:username');
-				$q->bindValue(':username', $u, \PDO::PARAM_STR);
-				$q->execute();
-				$rows = $q->fetchAll(\PDO::FETCH_ASSOC);
-
-				$u = array(
-					'user' => $u,
-					'permissions' => $rows
-				);
-			} elseif ($type == 'mysql' && function_exists('mysql_connect')) {
-				// @todo #18
-			}
-		}
-		*/
-
 	}
 
 	public static function login($username, $password) {
@@ -107,7 +77,7 @@ class User extends \Tipsy\Resource {
 					break;
 				}
 			}
-var_dump($u);
+
 			if ($u && ((!$u['password_hash'] && !$u['password']) || ($u['password_hash'] && password_verify($password, $u['password_hash']) || ($u['password'] && $password == $u['password'])))) {
 				// successfuly send username and password
 				return new User($u['username']);
@@ -118,7 +88,6 @@ var_dump($u);
 		// use php data objects only if we have the libs
 		} elseif ($type == 'pdo') {
 
-			//$u = self::query('select * from `user` where username=? limit 1', [$username])->get(0);
 			$u = new User($username);
 
 			if ($u->id_user && password_verify($password, $u->password_hash)) {
