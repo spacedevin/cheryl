@@ -17,6 +17,6 @@ Deploying on Heroku will use Nginx and Postgres.
 
 1. Install [Composer](https://getcomposer.org/)
 1. Run `composer install` from within your Cheryl directory
-1. Edit any settings in **config.ini**
-1. Ensure your root files directory is chmod to 0777 if using localy stored files
+1. Edit any settings in **config/config.yml**
+1. Ensure your **files** directory is chmod to 0777 if using localy stored files
 1. Login with your user/pass. Default is u: **admin**, p: **password**.
