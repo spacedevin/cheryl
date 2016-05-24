@@ -1,0 +1,11 @@
+view:
+  path: ./
+  layout:
+
+cheryl:
+  root: ../files
+  users:
+    - username: admin
+      password_hash: $2y$10$LQhNZMW3E66NPcTUkCPDyenq3Pn5mJJyZmIVRWzOrIP/2c7HrtodC
+      permissions: all
+

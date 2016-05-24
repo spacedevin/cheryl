@@ -105,7 +105,7 @@ class Cheryl {
 
 		$this->_tipsy = new \Tipsy\Tipsy;
 
-		$this->tipsy()->config('../config/config.ini');
+		$this->tipsy()->config('../config/config.yml');
 		$this->config = array_merge($this->defaultConfig, $this->tipsy()->config()['cheryl']);
 		$config = array_merge($this->config, $config);
 

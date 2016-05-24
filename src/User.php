@@ -77,7 +77,7 @@ class User {
 				}
 			}
 
-			if ($u && (!$u['password'] || password_verify($pass, $u['password']))) {
+			if ($u && ((!$u['password_hash'] && !$u['password']) || ($u['password_hash'] && password_verify($pass, $u['password_hash']) || ($u['password'] && $pass == $u['password'])))) {
 				// successfuly send username and password
 				return new User($u);
 			}

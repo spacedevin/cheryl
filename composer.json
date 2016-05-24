@@ -1,6 +1,7 @@
 {
 	"require": {
-		"tipsyphp/tipsy": "^0.11.6"
+		"tipsyphp/tipsy": "^0.11.6",
+		"symfony/yaml": "^3.0"
 	},
 	"autoload": {
 		"psr-4": {
