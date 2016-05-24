@@ -303,6 +303,11 @@ h1 input:focus, h2 input:focus {
 	color: #303238;
 	font-size: 17px;
 	font-weight: 600;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: inline-block;
+	white-space: nowrap;
+	max-width: 100%;
 }
 .file .path {
 	color: #9ea0a4;
@@ -312,6 +317,7 @@ h1 input:focus, h2 input:focus {
 .file .fileinfo {
 	display: inline-block;
 	margin-left: 1.5em;
+	max-width: 70%;
 }
 .item-count {
 	float: right;
