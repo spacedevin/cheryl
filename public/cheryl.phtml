@@ -1,0 +1,193 @@
+<!DOCTYPE HTML>
+<html ng-app="Cheryl">
+	<base href="/">
+	<head>
+		<title>Cheryl</title>
+		<link rel="shortcut icon" href="/icon.png">
+		<link rel="apple-touch-icon-precomposed" href="/icon.png">
+
+		<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700,800" rel="stylesheet">
+		<link href="/cheryl.css" rel="stylesheet">
+
+	</head>
+	<body ng-controller="RootCtrl" ng-class="{'modal-enabled': dialog, 'global-error': (dialog && dialog.type == 'error'), 'fullscreen-editor': fullscreenEdit}" ng-body ng-drop-upload>
+		<div class="wrapper clearfix" ng-show="authed">
+			<div class="panel">
+				<a href="/"><div class="logo"></div></a>
+
+				<div class="filters" ng-show="type=='dir'">
+					<h2>Filter by date</h2>
+					<ul>
+						<li class="filter" ng-class="{enabled: filterCheck('dates',key)}" ng-click="filter('dates',key)" ng-repeat="(key, val) in dateFilterNames"><span class="filter-name">{{val}}</span><span class="item-count">({{dates[key] || '0'}})</span></li>
+					</ul>
+					<br><br>
+					<h2>Filter by type</h2>
+					<ul>
+						<li class="filter" ng-class="{enabled: filterCheck('types',key)}" ng-click="filter('types',key)" ng-repeat="(key, val) in types"><span class="filter-name">{{key}}</span><span class="item-count">({{val}})</span></li>
+					</ul>
+					<br><br>
+					<h2>Sort by</h2>
+					<ul>
+						<li class="filter">Name</li>
+						<li class="filter">Date</li>
+						<li class="filter">Type</li>
+					</ul>
+
+				</div>
+				<div class="details" ng-show="type!='dir'">
+					<h2>File info</h2>
+					<ul>
+						<li class="info" ng-show="file.ctime">Created: {{file.ctime*1000 | date:'medium'}}</li>
+						<li class="info">Modified: {{file.mtime*1000 | date:'medium'}}</li>
+						<li class="info">Size: {{file.sizeReadable}}</li>
+						<li class="info" ng-repeat="(key, val) in file.meta">{{key}}: <b>{{val}}</b></li>
+					</ul>
+				</div>
+			</div>
+
+			<div class="toggles">
+				<button ng-class="{enabled: filters.recursive == 0}" ng-click="filter('recursive',0)">Browse</button>
+				<button ng-class="{enabled: filters.recursive == 1}" ng-click="filter('recursive',1)">Recent</button>
+				<div class="search" ng-class="{active: searchActive}">
+					<i class="fa fa-search"></i>
+					<input type="text" class="search-box" ng-model="filters.search" ng-focus="searchActive=true" ng-blur="searchActive=false" placeholder="Search">
+				</div>
+			</div>
+			<div class="content">
+				<div class="location">
+					<h1>
+						<i class="fa fa-folder-open"></i>&nbsp;&nbsp;
+						<input ng-model="file.name" ng-show="file.writeable && file.name" ng-file-name><span class="file-name-top" ng-show="!file.name || !file.writeable">{{file.name || 'Home'}}</span>
+					</h1>
+					<a href="{{path()}}{{file.path}}" class="path">{{file.path ? 'Home' + (file.path == '/' ? '' : file.path) : ''}}</a>
+				</div>
+				<div class="actions">
+					<button title="Fullscreen editor" class="fullscreen-button" ng-show="file.writeable && file.name && type!='dir' && file.type == 'text'" ng-fullscreen-editor><i class="fa fa-expand"></i></button>
+					<button title="Save this file" class="save-button" ng-save ng-show="file.writeable && file.name && type!='dir' && file.type == 'text'"><i class="fa fa-floppy-o"></i></button>
+					<button title="Delete this {{type=='dir' ? 'folder' : 'file'}}" class="delete-button" ng-delete ng-show="file.writeable && file.name"><i class="fa fa-trash-o"></i></button>
+					<a href="#NewFile"><button title="Create a new file" class="create-file-button" ng-make-file ng-show="file.writeable && type=='dir'"><i class="fa fa-file-text"></i></button></a>
+					<button title="Create a new folder" class="create-folder-button" ng-make-dir ng-show="file.writeable && type=='dir'"><i class="fa fa-folder"></i></button>
+					<button title="Upload a file" class="upload-button" ng-upload ng-show="file.writeable && type=='dir'"><i class="fa fa-cloud-upload"></i></button>
+				</div>
+				<div class="uploads" ng-show="type=='dir'">
+					<a class="file upload-item clearfix" ng-repeat="upload in uploads">
+						<div class="progress progress-striped active ">
+							<div class="progress-bar" ng-class="{'progress-bar-info': upload.status == 'uploading', 'progress-bar-danger': upload.status == 'error', 'progress-bar-success': upload.status == 'success'}" style="width: {{upload.progress}}%"></div>
+						</div>
+						<div class="upload-content">
+							<div class="icon">
+								<i class="fa fa-cloud-upload"></i>
+							</div>
+							<div class="fileinfo">
+								<span class="filename">{{upload.name}}</span>
+								<span class="path"><br>Home{{upload.path}}</span>
+							</div>
+							<span class="attrs">
+								{{upload.sizeReadable}}<br>
+								<b ng-show="upload.status == 'success'">Complete!</b>
+								<b ng-show="upload.status == 'error'">Failed to upload</b>
+							</span>
+						</div>
+					</a>
+				</div>
+
+				<div class="files" ng-show="type=='dir'">
+					<a href="{{path()}}{{file.path}}/{{file.name}}" class="file" ng-repeat="file in dirs | filter:filterFolders" tabindex="1" ng-show="!filters.recursive">
+						<i class="icon fa fa-folder-o"></i>
+						<div class="fileinfo">
+							<span class="filename">{{file.name}}</span>
+							<span class="path"><br>Home{{file.path}}</span>
+						</div>
+					</a>
+
+					<a href="{{path()}}{{file.path}}/{{file.name}}" class="file" ng-repeat="file in files | filter:filterFiles" tabindex="1" >
+						<div class="icon" ng-click="downloadFile($event, file)">
+							<i class="fa fa-file-text-o"></i>
+							<i class="fa fa-download"></i>
+						</div>
+						<div class="fileinfo">
+							<span class="filename">{{file.name}}</span>
+							<span class="path"><br>Home{{file.path}}</span>
+						</div>
+						<span class="attrs">
+							{{file.dateReadable}}<br>
+							{{file.sizeReadable}}
+						</span>
+					</a>
+				</div>
+				<div class="file-contents" ng-show="type!='dir'">
+					<div id="editor" ng-show="file.contents"></div>
+					<div class="preview" ng-show="file.type=='image'"><img src="/?__p=vw&_d={{file.path}}/{{file.name}}"></div>
+				</div>
+			</div>
+			<div class="copyright">
+				<a href="http://cheryl.io" target="_blank"><span class="powered">powered by</span> <span class="cheryl">cheryl.io</span></a>
+			</div>
+		</div>
+		<div class="login-wrap" ng-show="!authed">
+			<div class="login">
+				<form ng-submit="login()">
+					<div class="welcome fadeInDown animated" ng-bind="welcome">Welcome!</div>
+					<div class="login-form fadeIn animated">
+						<div class="input-wrap">
+							<span class="label">Username:</span>
+							<span class="field"><input type="text" ng-model="user.username" autofocus></span>
+						</div>
+						<div class="input-wrap">
+							<span class="label">Password:</span>
+							<span class="field"><input type="password" ng-model="user.password"></span>
+						</div>
+						<button class="login-button" type="submit"><i class="fa fa-heart"></i>&nbsp;&nbsp;&nbsp;Login</button>
+					</div>
+				</form>
+
+				<div class="copyright-login">
+					<a href="http://cheryl.io" target="_blank"><span class="powered">powered by</span> <span class="cheryl">cheryl.io</span></a>
+				</div>
+			</div>
+		</div>
+		<div class="modal-wrap" ng-modal>
+			<div class="modal modal-{{dialog.type}}">
+				<div ng-show="dialog.type == 'makeDir'">
+					<form ng-submit="dialog.yes()">
+						<h2>Create a folder in <b>Home{{file.path ? (file.path == '/' ? '' : file.path) : ''}}{{file.path ? '/' : ''}}{{file.name}}</b>
+							<br><br>
+							<input type="text" ng-model="dialog.file" ng-autofocus="dialog.type == 'makeDir'">
+						</h2>
+
+						<br><br><br>
+						<button type="submit">Make</button>
+						<button ng-click="dialog.no()">Cancel</button>
+					</form>
+				</div>
+				<div ng-show="dialog.type == 'confirmDelete'">
+					<h2>Are you sure you want to delete <b>{{dialog.file.name}}</b>?</h2>
+					<br><br><br>
+					<form ng-submit="dialog.yes()">
+						<button ng-autofocus="dialog.type == 'confirmDelete'" tabindex="20">Yes</button>
+						<button ng-click="dialog.no()" tabindex="21">No</button>
+					</form>
+				</div>
+				<div ng-show="dialog.type == 'error'">
+					<h2>{{dialog.message}}</h2>
+					<br><br><br>
+					<form ng-submit="dialog=false">
+						<button ng-autofocus="dialog.type == 'error'">Close</button>
+					</form>
+				</div>
+				<div ng-show="dialog.type == 'dropupload'">
+					<h1><i class="fa fa-cloud-upload"></i></h1>
+					<h2>Drop it!</h2>
+				</div>
+			</div>
+		</div>
+		<iframe id="downloader"></iframe>
+		<input type="file" class="upload" ng-uploader multiple>
+	</body>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-route.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.1.01/ace.js"></script>
+	<script src="/cheryl.js"></script>
+
+</html>
