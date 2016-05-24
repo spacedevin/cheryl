@@ -41,17 +41,17 @@ a, a:visited, a:active {
 	height: 0;
 }
 
-.logo svg {
+.logo {
 	height: 90px;
 	width: 90px;
+	margin: 30px 0 40px 40px;
+	background: url(./wink.svg) no-repeat;
+	background-size: 100%;
 }
 .panel {
 	float: left;
 	width: 170px;
 	margin: 0 20px 0 0;
-}
-.logo {
-	margin: 30px 0 40px 40px;
 }
 .toggles {
 	float: left;
@@ -120,10 +120,10 @@ h1 input:focus, h2 input:focus {
 	opacity: .8;
 }
 .toggles button:hover {
-	opacity: .7;	
+	opacity: .7;
 }
 .toggles button.enabled:hover {
-	opacity: 1;	
+	opacity: 1;
 }
 .toggles .search {
 	border: 0;
@@ -410,7 +410,7 @@ button, .filter {
 	overflow: hidden;
 	background-color: #555963;
 	float: left;
-	width: 100%; 
+	width: 100%;
 }
 .progress-bar {
 	overflow: hidden;
@@ -646,7 +646,7 @@ button, .filter {
 	100% { -webkit-transform: translate(1px, -2px)  rotate(-1deg); }
 }
 
-.global-error .logo svg {
+.global-error .logo {
 	-webkit-animation-name: 'shake';
 	-webkit-animation-duration: 0.3s;
 	-webkit-transform-origin:50% 50%;
@@ -657,14 +657,14 @@ button, .filter {
 	height: 100%;
 	min-height: 500px;
 	font-size: 11px;
-	
+
 }
 .file-contents {
 	margin-top: 1em;
 }
 
-                
-.fullscreen-editor #editor { 
+
+.fullscreen-editor #editor {
 	height: auto !important;
 	width: auto !important;
 	border: 0;
