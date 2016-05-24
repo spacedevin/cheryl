@@ -118,6 +118,7 @@
 				</div>
 				<div class="file-contents" ng-show="type!='dir'">
 					<div id="editor" ng-show="file.contents"></div>
+					<div class="preview" ng-show="file.type=='image'"><img src="/?__p=vw&_d={{file.path}}/{{file.name}}"></div>
 				</div>
 			</div>
 			<div class="copyright">

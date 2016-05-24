@@ -825,3 +825,7 @@ button, .filter {
 	     -o-animation-name: fadeIn;
 	        animation-name: fadeIn;
 }
+
+.preview img {
+	width: 100%;
+}
