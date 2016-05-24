@@ -16,7 +16,7 @@ namespace Cheryl;
 
 ignore_user_abort(false);
 set_time_limit(10);
-date_default_timezone_set('America/Los_Angeles');
+date_default_timezone_set('UTC');
 
 ini_set('zlib.output_compression','On');
 ini_set('zlib.output_compression_level', 9);
