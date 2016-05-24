@@ -148,7 +148,7 @@ class Cheryl {
 			->get('dl', function() use ($self) {
 				$self->_getFile(true);
 			})
-			->get('ul', function() use ($self) {
+			->post('ul', function() use ($self) {
 				$self->_takeFile();
 			})
 			->get('vw', function() use ($self) {
