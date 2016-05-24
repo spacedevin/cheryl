@@ -19,4 +19,4 @@ ini_set('display_errors',true);
 	]]
 ]);
 
-\Cheryl\Cheryl::go();
+\Cheryl\Cheryl::start();

@@ -118,7 +118,7 @@ class Cheryl {
 		return self::$_cheryl;
 	}
 
-	public static function go() {
+	public static function start() {
 		self::me()->_request();
 	}
 

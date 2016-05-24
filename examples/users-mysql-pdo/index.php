@@ -33,4 +33,4 @@ Cheryl::init(array(
 ));
 
 // manualy run the script since were using a custom config
-Cheryl::go();
+Cheryl::start();
