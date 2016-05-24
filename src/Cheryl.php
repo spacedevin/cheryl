@@ -362,7 +362,7 @@ class Cheryl {
 	}
 
 	public function _cTime($file) {
-		return trim(shell_exec('stat -f %B '.escapeshellarg($file->getPathname())));
+		return (int)trim(shell_exec('stat -f %B '.escapeshellarg($file->getPathname())));
 	}
 
 	// do our own type detection
