@@ -98,14 +98,10 @@ class Cheryl {
 	}
 
 	public static function start() {
-		self::me()->_request();
-	}
+		$self = self::me();
+		$self->tipsy()->request()->path($self->tipsy()->request()->request()['__p']);
 
-	public function _request() {
-		$this->tipsy()->request()->path($this->tipsy()->request()->request()['__p']);
-		$self = $this;
-
-		$this->tipsy()
+		$self->tipsy()
 			->get('logout', function() use ($self) {
 				$self->_logout();
 				echo json_encode([
@@ -158,7 +154,7 @@ class Cheryl {
 				$View->display('cheryl');
 			});
 
-		$this->tipsy()->run();
+		$self->tipsy()->run();
 	}
 
 	public function _setup() {
@@ -311,171 +307,9 @@ class Cheryl {
 		}
 	}
 
-	public function _getFiles($dir, $filters = array()) {
-
-		if ($filters['recursive']) {
-			$iter = new \RecursiveDirectoryIterator($dir);
-			$iterator = new \RecursiveIteratorIterator(
-				$iter,
-				\RecursiveIteratorIterator::SELF_FIRST,
-				\RecursiveIteratorIterator::CATCH_GET_CHILD
-			);
-
-			$filtered = new CherylFilterIterator($iterator);
-
-			$paths = array($dir);
-			foreach ($filtered as $path => $file) {
-				if ($file->getFilename() == '.' || $file->getFilename() == '..') {
-					continue;
-				}
-				if ($file->isDir()) {
-					$dirs[] = $this->_getFileInfo($file);
-				} elseif (!$file->isDir()) {
-					$files[] = $this->_getFileInfo($file);
-				}
-			}
-
-		} else {
-			$iter = new CherylDirectoryIterator($dir);
-			$filter = new CherylFilterIterator($iter);
-			$iterator = new \IteratorIterator($filter);
-
-			$paths = array($dir);
-			foreach ($iterator as $path => $file) {
-				if ($file->isDot()) {
-					continue;
-				}
-				if ($file->isDir()) {
-					$dirs[] = $this->_getFileInfo($file);
-				} elseif (!$file->isDir()) {
-					$files[] = $this->_getFileInfo($file);
-				}
-			}
-		}
-
-		return array('dirs' => $dirs, 'files' => $files);
-	}
 
 	public function _cTime($file) {
 		return (int)trim(shell_exec('stat -f %B '.escapeshellarg($file->getPathname())));
-	}
-
-	// do our own type detection
-	public function _type($file, $extended = false) {
-
-		$mime = mime_content_type($file->getPathname());
-
-		$mimes = explode('/',$mime);
-		$type = strtolower($mimes[0]);
-		$ext = $file->getExtension();
-
-		if ($ext == 'pdf') {
-			$type = 'image';
-		}
-
-		$ret = array(
-			'type' => $type,
-			'mime' => $mime
-		);
-
-		if (!$extended) {
-			return $ret['type'];
-		} else {
-			return $ret;
-		}
-	}
-
-	public function _getFileInfo($file, $extended = false) {
-		$path = str_replace(realpath($this->config['root']),'',realpath($file->getPath()));
-
-		if ($file->isDir()) {
-			$info = array(
-				'path' => $path,
-				'name' => $file->getFilename(),
-				'writeable' => $file->isWritable(),
-				'type' => $this->_type($file, false)
-			);
-
-		} elseif (!$file->isDir()) {
-			$info = array(
-				'path' => $path,
-				'name' => $file->getFilename(),
-				'size' => $file->getSize(),
-				'mtime' => $file->getMTime(),
-				'ext' => $file->getExtension(),
-				'writeable' => $file->isWritable()
-			);
-
-			if ($this->features->ctime) {
-				$info['ctime'] = $this->_cTime($file);
-			}
-
-			if ($extended) {
-				$type = $this->_type($file, true);
-
-				$info['type'] = $type['type'];
-
-				$info['meta'] = array(
-					'mime' => $type['mime']
-				);
-
-				if ($type['type'] == 'text') {
-					$info['contents'] = file_get_contents($file->getPathname());
-				}
-
-				if (strpos($mime, 'image') > -1) {
-					if ($this->features->exif) {
-						$exif = @exif_read_data($file->getPathname());
-
-						if ($exif) {
-							$keys = array('Make','Model','ExposureTime','FNumber','ISOSpeedRatings','FocalLength','Flash');
-							foreach ($keys as $key) {
-								if (!$exif[$key]) {
-									continue;
-								}
-								$exifInfo[$key] = $exif[$key];
-							}
-							if ($exif['DateTime']) {
-								$d = new \DateTime($exif['DateTime']);
-								$exifInfo['Created'] = $d->getTimestamp();
-							} elseif ($exif['FileDateTime']) {
-								$exifInfo['Created'] = $exif['FileDateTime'];
-							}
-							if ($exif['COMPUTED']['CCDWidth']) {
-								$exifInfo['CCDWidth'] = $exif['COMPUTED']['CCDWidth'];
-							}
-							if ($exif['COMPUTED']['ApertureFNumber']) {
-								$exifInfo['ApertureFNumber'] = $exif['COMPUTED']['ApertureFNumber'];
-							}
-							if ($exif['COMPUTED']['Height']) {
-								$height = $exif['COMPUTED']['Height'];
-							}
-							if ($exif['COMPUTED']['Width']) {
-								$width = $exif['COMPUTED']['Width'];
-							}
-						}
-					}
-					$info['meta']['exif'] = $exifInfo;
-				}
-				if (!$height || !$width) {
-					if ($this->features->gd) {
-						$is = @getimagesize($file->getPathname());
-						if ($is[0]) {
-							$width = $is[0];
-							$height = $is[1];
-						}
-					}
-				}
-				if ($height && $width) {
-					$info['meta']['height'] = $height;
-					$info['meta']['width'] = $width;
-				}
-			}
-
-			$info['perms'] = $file->getPerms();
-
-		}
-		return $info;
 	}
 
 	public function _getFile($download = false) {
@@ -562,33 +396,8 @@ class Cheryl {
 			exit;
 		}
 
-		if (is_file($this->requestDir)) {
-			$file = new \SplFileObject($this->requestDir);
-			$info = $this->_getFileInfo($file, true);
-			echo json_encode(array('type' => 'file', 'file' => $info));
-
-		} else {
-
-			if (realpath($this->requestDir) == realpath($this->config['root'])) {
-				$path = '';
-				$name = '';
-			} else {
-				$dir = pathinfo($this->requestDir);
-				$path = str_replace(realpath($this->config['root']),'',realpath($dir['dirname']));
-				$name = basename($this->requestDir);
-				$path = $path{0} == '/' ? $path : '/'.$path;
-			}
-			$info = array(
-				'path' => $path,
-				'writeable' => is_writable($this->requestDir),
-				'name' => $name
-			);
-
-			$files = $this->_getFiles($this->requestDir, array(
-				'recursive' => $this->request['filters']['recursive']
-			));
-			echo json_encode(array('type' => 'dir', 'list' => $files, 'file' => $info));
-		}
+		$res = $this->storageAdapter()->ls($this->requestDir, $this->request['filters']);
+		echo json_encode($res);
 	}
 
 	public function _takeFile() {
@@ -719,22 +528,24 @@ class Cheryl {
 	public function tipsy() {
 		return $this->_tipsy;
 	}
-}
 
-
-class CherylFilterIterator extends \FilterIterator {
-    public function accept() {
-        return Cheryl::iteratorFilter($this->current());
-    }
-}
-
-class CherylDirectoryIterator extends \DirectoryIterator {
-	public function getExtension() {
-		if (method_exists(get_parent_class($this), 'getExtension')) {
-			$ext = parent::getExtension();
-		} else {
-			$ext = pathinfo($this->getPathName(), PATHINFO_EXTENSION);
+	public function storageAdapter() {
+		if (!isset($this->_storageAdapter)) {
+			switch ($this->config['storage']) {
+				default:
+				case 'local':
+					$this->_storageAdapter = new File\Local\Adapter;
+					break;
+				case 'db':
+					$this->_storageAdapter = new File\Db\Adapter;
+					break;
+				case 's3':
+					throw new \Exception('todo');
+					break;
+			}
 		}
-		return strtolower($ext);
+		return $this->_storageAdapter;
 	}
 }
+
+
