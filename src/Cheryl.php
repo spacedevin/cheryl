@@ -90,6 +90,32 @@ class Cheryl {
 		$this->_digestRequest();
 		$this->_setup();
 		$this->_authenticate();
+
+		$self = $this;
+
+		$this->tipsy()->service('Auth', function() use ($self) {
+			$service = [
+				// set readonly to true if a readonly page should have access
+				check => function($readonly = false) use ($self) {
+					if (!$self->authed && (($readonly && !$self->config['readonly']) || (!$readonly))) {
+						$res = false;
+					} else {
+						$res = true;
+					}
+
+					if ($res == false) {
+						http_response_code(401);
+						echo json_encode([
+							'status' => false,
+							'message' => 'not authenticated'
+						]);
+						exit;
+					}
+				}
+
+			];
+			return $service;
+		});
 	}
 
 	// method to grab object from static calls
@@ -126,14 +152,9 @@ class Cheryl {
 			->get('config', function() use ($self) {
 				$self->_getConfig();
 			})
-			->get('ls', function() use ($self, $Request) {
-				if (!$self->authed && !$self->config['readonly']) {
-					echo json_encode([
-						'status' => false,
-						'message' => 'not authenticated'
-					]);
-					return;
-				}
+
+			->get('ls', function($Auth) use ($self) {
+				$Auth->check(true);
 
 				if (!$self->requestDir) {
 					http_response_code(404);
@@ -143,8 +164,17 @@ class Cheryl {
 				$res = $self->storageAdapter()->ls($self->requestDir, $self->request['filters']);
 				echo json_encode($res);
 			})
-			->get('dl', function() use ($self) {
-				$self->_getFile(true);
+
+			->get('dl', function($Auth) use ($self) {
+				$Auth->check(true);
+
+				if (!$self->requestDir) {
+					http_response_code(404);
+					return;
+				}
+
+				// true will force a download
+				$self->storageAdapter()->getFile($self->requestDir, true);
 			})
 			->post('ul', function() use ($self) {
 				$self->_takeFile();
@@ -324,78 +354,6 @@ class Cheryl {
 
 	public function _cTime($file) {
 		return (int)trim(shell_exec('stat -f %B '.escapeshellarg($file->getPathname())));
-	}
-
-	public function _getFile($download = false) {
-		if (!$this->authed && !$this->config['readonly']) {
-			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
-			exit;
-		}
-
-		if (!$this->requestDir || !is_file($this->requestDir)) {
-			header('Status: 404 Not Found');
-			header('HTTP/1.0 404 Not Found');
-			exit;
-		}
-
-		$file = new \SplFileObject($this->requestDir);
-
-		// not really sure if this range shit works. stole it from an old script i wrote
-		if (isset($_SERVER['HTTP_RANGE'])) {
-			list($size_unit, $range_orig) = explode('=', $_SERVER['HTTP_RANGE'], 2);
-			if ($size_unit == 'bytes') {
-				list($range, $extra_ranges) = explode(',', $range_orig, 2);
-			} else {
-				$range = '';
-			}
-
-			if ($range) {
-				list ($seek_start, $seek_end) = explode('-', $range, 2);
-			}
-
-			$seek_end = (empty($seek_end)) ? ($size - 1) : min(abs(intval($seek_end)),($size - 1));
-			$seek_start = (empty($seek_start) || $seek_end < abs(intval($seek_start))) ? 0 : max(abs(intval($seek_start)),0);
-
-			if ($seek_start > 0 || $seek_end < ($size - 1)) {
-				header('HTTP/1.1 206 Partial Content');
-			} else {
-				header('HTTP/1.1 200 OK');
-			}
-			header('Accept-Ranges: bytes');
-			header('Content-Range: bytes '.$seek_start.'-'.$seek_end.'/'.$size);
-			$contentLength = ($seek_end - $seek_start + 1);
-
-		} else {
-			header('HTTP/1.1 200 OK');
-			header('Accept-Ranges: bytes');
-			$contentLength = $file->getSize();
-		}
-
-		header('Pragma: public');
-		header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
-		header('Date: '.date('r'));
-		header('Last-Modified: '.date('r',$file->getMTime()));
-		header('Content-Length: '.$contentLength);
-		header('Content-Transfer-Encoding: binary');
-
-		if ($download) {
-			header('Content-Disposition: attachment; filename="'.$file->getFilename().'"');
-			header('Content-Type: application/force-download');
-		} else {
-			header('Content-Type: '. mime_content_type($file->getPathname()));
-		}
-
-		// i wrote this freading a really long time ago but it seems to be more robust than SPL. someone correct me if im wrong
-		$fp = fopen($file->getPathname(), 'rb');
-		fseek($fp, $seek_start);
-		while(!feof($fp)) {
-			set_time_limit(0);
-			print(fread($fp, 1024*8));
-			flush();
-			ob_flush();
-		}
-		fclose($fp);
-		exit;
 	}
 
 	public function _takeFile() {

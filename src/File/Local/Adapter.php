@@ -215,4 +215,69 @@ class Adapter {
 		}
 	}
 
+	public function getFile($file, $download = false) {
+		if (!is_file($file)) {
+			return false;
+		}
+
+		$file = new \SplFileObject($file);
+
+		// not really sure if this range shit works. stole it from an old script i wrote
+		if (isset($_SERVER['HTTP_RANGE'])) {
+			list($size_unit, $range_orig) = explode('=', $_SERVER['HTTP_RANGE'], 2);
+			if ($size_unit == 'bytes') {
+				list($range, $extra_ranges) = explode(',', $range_orig, 2);
+			} else {
+				$range = '';
+			}
+
+			if ($range) {
+				list ($seek_start, $seek_end) = explode('-', $range, 2);
+			}
+
+			$seek_end = (empty($seek_end)) ? ($size - 1) : min(abs(intval($seek_end)),($size - 1));
+			$seek_start = (empty($seek_start) || $seek_end < abs(intval($seek_start))) ? 0 : max(abs(intval($seek_start)),0);
+
+			if ($seek_start > 0 || $seek_end < ($size - 1)) {
+				header('HTTP/1.1 206 Partial Content');
+			} else {
+				header('HTTP/1.1 200 OK');
+			}
+			header('Accept-Ranges: bytes');
+			header('Content-Range: bytes '.$seek_start.'-'.$seek_end.'/'.$size);
+			$contentLength = ($seek_end - $seek_start + 1);
+
+		} else {
+			header('HTTP/1.1 200 OK');
+			header('Accept-Ranges: bytes');
+			$contentLength = $file->getSize();
+		}
+
+		header('Pragma: public');
+		header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+		header('Date: '.date('r'));
+		header('Last-Modified: '.date('r',$file->getMTime()));
+		header('Content-Length: '.$contentLength);
+		header('Content-Transfer-Encoding: binary');
+
+		if ($download) {
+			header('Content-Disposition: attachment; filename="'.$file->getFilename().'"');
+			header('Content-Type: application/force-download');
+		} else {
+			header('Content-Type: '. mime_content_type($file->getPathname()));
+		}
+
+		// i wrote this freading a really long time ago but it seems to be more robust than SPL. someone correct me if im wrong
+		$fp = fopen($file->getPathname(), 'rb');
+		fseek($fp, $seek_start);
+		while(!feof($fp)) {
+			set_time_limit(0);
+			print(fread($fp, 1024*8));
+			flush();
+			ob_flush();
+		}
+		fclose($fp);
+		exit;
+	}
+
 }
