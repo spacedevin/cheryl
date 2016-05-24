@@ -13,14 +13,6 @@
 
 namespace Cheryl;
 
-
-ignore_user_abort(false);
-set_time_limit(10);
-date_default_timezone_set('UTC');
-
-ini_set('zlib.output_compression','On');
-ini_set('zlib.output_compression_level', 9);
-
 class Cheryl {
 	private static $_cheryl;
 
@@ -90,9 +82,8 @@ class Cheryl {
 			$config = [];
 		}
 
-		$this->_tipsy = new \Tipsy\Tipsy;
+		$this->_tipsy = \Tipsy\Tipsy::app();
 
-		$this->tipsy()->config('../config/config.yml');
 		$this->config = array_merge($this->defaultConfig, $this->tipsy()->config()['cheryl']);
 		$this->config = array_merge($this->config, $config);
 
@@ -242,6 +233,10 @@ class Cheryl {
 	}
 
 	public function _authenticate() {
+		if (php_sapi_name() == 'cli') {
+			return $this->authed = true;
+		}
+
 		if (!User::users()) {
 			// allow anonymouse access. ur crazy!
 			return $this->authed = true;
