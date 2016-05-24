@@ -9,16 +9,16 @@
     "packages": [
         {
             "name": "tipsyphp/tipsy",
-            "version": "v0.11.7",
+            "version": "v0.11.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/tipsyphp/tipsy.git",
-                "reference": "ef96e549ce95aea76879e696d351f85821447f03"
+                "reference": "3dac011472cc22917fbb90930e70d9ff1e48800d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/tipsyphp/tipsy/zipball/ef96e549ce95aea76879e696d351f85821447f03",
-                "reference": "ef96e549ce95aea76879e696d351f85821447f03",
+                "url": "https://api.github.com/repos/tipsyphp/tipsy/zipball/3dac011472cc22917fbb90930e70d9ff1e48800d",
+                "reference": "3dac011472cc22917fbb90930e70d9ff1e48800d",
                 "shasum": ""
             },
             "require": {
