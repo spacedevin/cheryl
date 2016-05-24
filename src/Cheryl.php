@@ -126,8 +126,22 @@ class Cheryl {
 			->get('config', function() use ($self) {
 				$self->_getConfig();
 			})
-			->get('ls', function() use ($self) {
-				$self->_requestList();
+			->get('ls', function() use ($self, $Request) {
+				if (!$self->authed && !$self->config['readonly']) {
+					echo json_encode([
+						'status' => false,
+						'message' => 'not authenticated'
+					]);
+					return;
+				}
+
+				if (!$self->requestDir) {
+					http_response_code(404);
+					return;
+				}
+
+				$res = $self->storageAdapter()->ls($self->requestDir, $self->request['filters']);
+				echo json_encode($res);
 			})
 			->get('dl', function() use ($self) {
 				$self->_getFile(true);
@@ -382,22 +396,6 @@ class Cheryl {
 		}
 		fclose($fp);
 		exit;
-	}
-
-	public function _requestList() {
-		if (!$this->authed && !$this->config['readonly']) {
-			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
-			exit;
-		}
-
-		if (!$this->requestDir) {
-			header('Status: 404 Not Found');
-			header('HTTP/1.0 404 Not Found');
-			exit;
-		}
-
-		$res = $this->storageAdapter()->ls($this->requestDir, $this->request['filters']);
-		echo json_encode($res);
 	}
 
 	public function _takeFile() {
