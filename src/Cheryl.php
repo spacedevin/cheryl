@@ -130,14 +130,23 @@ class Cheryl {
 		$this->tipsy()
 			->get('logout', function() use ($self) {
 				$self->_logout();
-				echo json_encode(array('status' => true, 'message' => 'logged out'));
+				echo json_encode([
+					'status' => true,
+					'message' => 'logged out'
+				]);
 			})
 			->post('login', function() use ($self) {
 				$res = $self->_login();
 				if ($res) {
-					echo json_encode(array('status' => true, 'message' => 'logged in'));
+					echo json_encode([
+						'status' => true,
+						'message' => 'logged in'
+					]);
 				} else {
-					echo json_encode(array('status' => false, 'message' => 'failed to log in'));
+					echo json_encode([
+						'status' => false,
+						'message' => 'failed to log in'
+					]);
 				}
 			})
 			->get('config', function() use ($self) {
