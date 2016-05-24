@@ -9,11 +9,11 @@ if (trim(`whoami`) == 'arzynik') {
 }
 
 class Cheryl_Test extends PHPUnit_Framework_TestCase {
-	public function setupDb($tipsy) {
-		$tipsy->config('tests/config.db.'.(getenv('TRAVIS') ? 'travis' : 'local').'.'.(getenv('DB') ? getenv('DB') : 'mysql' ).'.ini');
+	public function setupDb() {
+		\Tipsy\Tipsy::app()->config(dirname(__FILE__).'config.db.'.(getenv('TRAVIS') ? 'travis' : 'local').'.'.(getenv('DB') ? getenv('DB') : 'mysql' ).'.ini');
 
 		if (getenv('DB') == 'pgsql') {
-			$this->tip->service('Db', 'Tipsy\Db\MysqlToPgsql');
+			\Tipsy\Tipsy::app()->service('Db', 'Tipsy\Db\MysqlToPgsql');
 		}
 	}
 
