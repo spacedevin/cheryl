@@ -2,10 +2,18 @@
 
 namespace Cheryl;
 
-class User extends \Cheryl\User_Base {
+class User {
 
 	public static function users() {
 		return Cheryl::me()->config['users'];
+	}
+
+	public function permission($permission) {
+		if ($this->permissions == 'all' || is_array($this->permissions) && $this->permissions[$perimssions] || is_object($this->permissions) && $this->permissions->{$perimssions}) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	public function __construct($u) {
@@ -36,7 +44,17 @@ class User extends \Cheryl\User_Base {
 			}
 		}
 
-		parent::__construct($u);
+		if (is_array($u)) {
+			foreach ($u as $key => $value) {
+				$this->{$key} = $value;
+			}
+		} elseif(is_object($u)) {
+			foreach (get_object_vars($u) as $key => $value) {
+				$this->{$key} = $value;
+			}
+		} elseif (is_string($u)) {
+
+		}
 	}
 
 	public static function login() {
@@ -82,39 +100,6 @@ class User extends \Cheryl\User_Base {
 		// use php data objects only if we have the libs
 		} elseif ($type == 'mysql' && function_exists('mysql_connect')) {
 			// @todo #18
-		} else {
-			return false;
-		}
-	}
-}
-
-
-class User_Base {
-	public function __construct($u = null) {
-		if (is_array($u)) {
-			foreach ($u as $key => $value) {
-				$this->{$key} = $value;
-			}
-		} elseif(is_object($u)) {
-			foreach (get_object_vars($u) as $key => $value) {
-				$this->{$key} = $value;
-			}
-		} elseif (is_string($u)) {
-
-		}
-	}
-
-	public static function users() {
-		return array();
-	}
-
-	public static function login() {
-		return false;
-	}
-
-	public function permission($permission) {
-		if ($this->permissions == 'all' || is_array($this->permissions) && $this->permissions[$perimssions] || is_object($this->permissions) && $this->permissions->{$perimssions}) {
-			return true;
 		} else {
 			return false;
 		}
