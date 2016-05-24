@@ -34,13 +34,9 @@ class Cheryl {
 				'permissions' => 'all' // if set to all, all permissions are enabled. even new features addedd in the future
 			)
 		),
-		'authentication' => array(
-			'type' => 'simple'  // simple: users are stored in the users array. mysql: uses a mysqli interface. pdo: uses pdo interface. see examples
-		),
-		'useSha1' => true, // if true, passwords will be hashed client side for security.
+		'authentication' => 'simple',  // simple: users are stored in the users array. mysql: uses a mysqli interface. pdo: uses pdo interface. see examples,
 		'root' => 'files', // the folder you want users to browse
 		'includes' => 'Cheryl', // path to look for additional libraries. leave blank if you dont know
-		'templateName' => 'cheryl', // name of the template to look for. leave alone if you dont know
 		'readonly' => false, // if true, disables all write features, and doesnt require authentication
 		'features' => array(
 			'snooping' => false, // if true, a user can browse filters behind the root directory, posibly exposing secure files. not reccomended
@@ -53,11 +49,8 @@ class Cheryl {
 			'.git',
 			'.svn',
 			'.hg',
-			'.trash',
-			'.thumb',
-			'.cherylconfig'
+			'.thumb'
 		),
-		'trash' => true, // if true, deleting files will send to trash first
 		'libraries' => array(
 			'type' => 'remote'
 		),
@@ -101,7 +94,7 @@ class Cheryl {
 
 		$this->tipsy()->config('../config/config.yml');
 		$this->config = array_merge($this->defaultConfig, $this->tipsy()->config()['cheryl']);
-		$config = array_merge($this->config, $config);
+		$this->config = array_merge($this->config, $config);
 
 		$this->_digestRequest();
 		$this->_setup();
@@ -263,7 +256,10 @@ class Cheryl {
 	}
 
 	public function _login() {
-		$user = User::login();
+		$user = User::login(
+			Cheryl::me()->tipsy()->request()->request()['__username'],
+			Cheryl::me()->tipsy()->request()->request()['__password']
+		);
 		if ($user) {
 			$this->user = $user;
 			$this->authed = $_SESSION['cheryl-authed'] = true;
@@ -712,7 +708,8 @@ class Cheryl {
 	public function _getConfig() {
 		echo json_encode([
 			'status' => true,
-			'authed' => $this->authed
+			'authed' => $this->authed,
+			'user' => $this->user ? $this->user->exports() : ''
 		]);
 	}
 

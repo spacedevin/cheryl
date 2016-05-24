@@ -2,7 +2,7 @@
 
 namespace Cheryl;
 
-class User {
+class User extends \Tipsy\Resource {
 
 	public static function users() {
 		return Cheryl::me()->config['users'];
@@ -16,7 +16,50 @@ class User {
 		}
 	}
 
-	public function __construct($u) {
+	public function exports() {
+		return [
+			'id' => $this->id_user,
+			'username' => $this->username,
+			'permissions' => $this->permissions
+		];
+	}
+
+	public function loadUsername($username) {
+		$user = $this->query('select * from `user` where username=? limit 1', [$username])->get(0);
+		$this->load($user);
+	}
+
+	public function __construct($username = null) {
+		$type = strtolower(Cheryl::me()->config['authentication']);
+
+		switch ($type) {
+			default:
+			case 'simple':
+				foreach (self::users() as $user) {
+					if ($user['username'] == $username) {
+						$u = $user;
+						break;
+					}
+				}
+				if ($u) {
+					foreach($u as $key => $value) {
+						$this->{$key} = $value;
+					}
+				}
+				break;
+
+			case 'pdo':
+				$this->tipsy(\Tipsy\Tipsy::App());
+				$this->idVar('id_user')->table('user')->loadUsername($username);
+
+				$perms = $this->db()->query('select * from `permission` WHERE id_user=? limit 1', [$this->id_user])->fetch(\PDO::FETCH_ASSOC);
+				if ($perms) {
+					$this->permissions = $perms['permission'];
+				}
+				break;
+		}
+
+/*
 		if (is_string($u)) {
 			$type = strtolower(Cheryl::me()->config['authentication']['type']);
 
@@ -30,10 +73,10 @@ class User {
 
 			} elseif ($type == 'pdo' && class_exists('PDO')) {
 
-				$q = Cheryl::me()->config->authentication->pdo->prepare('SELECT * FROM '.Cheryl::me()->config['authentication']['permission_table'].' WHERE user=:username');
-				$q->bindValue(':username', $u, PDO::PARAM_STR);
+				$q = Cheryl::me()->config['authentication']['pdo']->prepare('SELECT * FROM '.Cheryl::me()->config['authentication']['permission_table'].' WHERE user=:username');
+				$q->bindValue(':username', $u, \PDO::PARAM_STR);
 				$q->execute();
-				$rows = $q->fetchAll(PDO::FETCH_ASSOC);
+				$rows = $q->fetchAll(\PDO::FETCH_ASSOC);
 
 				$u = array(
 					'user' => $u,
@@ -43,58 +86,43 @@ class User {
 				// @todo #18
 			}
 		}
+		*/
 
-		if (is_array($u)) {
-			foreach ($u as $key => $value) {
-				$this->{$key} = $value;
-			}
-		} elseif(is_object($u)) {
-			foreach (get_object_vars($u) as $key => $value) {
-				$this->{$key} = $value;
-			}
-		} elseif (is_string($u)) {
-
-		}
 	}
 
-	public static function login() {
-		if (Cheryl::me()->tipsy()->request()->request()['__username']) {
-			// log in attempt
-			$pass = Cheryl::me()->tipsy()->request()->request()['__password'];
-		} else {
+	public static function login($username, $password) {
+		$username = trim($username);
+
+		if (!$username) {
 			return false;
 		}
 
-		$type = strtolower(Cheryl::me()->config['authentication']['type']);
+		$type = strtolower(Cheryl::me()->config['authentication']);
 
 		// simple authentication. store users in an array
 		if ($type == 'simple') {
 			foreach (self::users() as $user) {
-
-				if ($user['username'] == Cheryl::me()->tipsy()->request()->request()['__username']) {
+				if ($user['username'] == $username) {
 					$u = $user;
 					break;
 				}
 			}
-
-			if ($u && ((!$u['password_hash'] && !$u['password']) || ($u['password_hash'] && password_verify($pass, $u['password_hash']) || ($u['password'] && $pass == $u['password'])))) {
+var_dump($u);
+			if ($u && ((!$u['password_hash'] && !$u['password']) || ($u['password_hash'] && password_verify($password, $u['password_hash']) || ($u['password'] && $password == $u['password'])))) {
 				// successfuly send username and password
-				return new User($u);
+				return new User($u['username']);
 			}
 
 			return false;
 
 		// use php data objects only if we have the libs
-		} elseif ($type == 'pdo' && class_exists('PDO')) {
+		} elseif ($type == 'pdo') {
 
-			$q = Cheryl::me()->config->authentication->pdo->prepare('SELECT * FROM '.Cheryl::me()->config->authentication->user_table.' WHERE user=:username AND hash=:hash LIMIT 1');
-			$q->bindValue(':username', Cheryl::tipsy()->request()->request()['__username'], PDO::PARAM_STR);
-			$q->bindValue(':hash', $pass, PDO::PARAM_STR);
-			$q->execute();
-			$rows = $q->fetchAll(PDO::FETCH_ASSOC);
+			//$u = self::query('select * from `user` where username=? limit 1', [$username])->get(0);
+			$u = new User($username);
 
-			if (count($rows)) {
-				return new User($rows[0]);
+			if ($u->id_user && password_verify($password, $u->password_hash)) {
+				return $u;
 			}
 
 		// use php data objects only if we have the libs

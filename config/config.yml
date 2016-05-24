@@ -4,8 +4,16 @@ view:
 
 cheryl:
   root: ../files
+  CHANGE_ME_FOR_PDO__authentication: pdo
+  authentication: simple
+  storage: local
   users:
     - username: admin
       password_hash: $2y$10$LQhNZMW3E66NPcTUkCPDyenq3Pn5mJJyZmIVRWzOrIP/2c7HrtodC
       permissions: all
 
+db:
+  host: localhost
+  user: root
+  pass: root
+  database: cheryl
