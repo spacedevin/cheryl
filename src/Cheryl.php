@@ -114,6 +114,7 @@ class Cheryl {
 		$this->_authenticate();
 	}
 
+	// method to grab object from static calls
 	public static function me() {
 		return self::$_cheryl;
 	}
