@@ -21,12 +21,6 @@ date_default_timezone_set('UTC');
 ini_set('zlib.output_compression','On');
 ini_set('zlib.output_compression_level', 9);
 
-
-if (!defined('CHERYL_SALT')) {
-	// password salt. make something random
-	define('CHERYL_SALT', 'SOMETHING/NOT/COOL/AND/RANDOM');
-}
-
 class Cheryl {
 	private static $_cheryl;
 
