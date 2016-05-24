@@ -359,9 +359,9 @@ button, .filter {
 	margin-right: .3em;
 }
 .actions button:hover {
-	background: #f0f0f0;
-	color: #555963;
-	border: 1px solid #9ea1a7;
+	background: #48aed9;
+	color: #fff;
+	border: 1px solid #48aed9;
 }
 .location .path {
 	display: inline-block;
@@ -620,16 +620,16 @@ button, .filter {
 	margin: 0 .5em 0 .5em;
 	cursor: pointer;
 	border-radius: 3px;
-	background: #f0f0f0;
-	color: #555963;
+	background: #555963;
+	color: #fff;
 	border: 1px solid #9ea1a7;
 	-webkit-transition: .15s all;
 }
 
 .modal button:focus, .modal button:hover {
-	background: #555963;
+	background: #48aed9;
 	color: #fff;
-	border: 1px solid #555963;
+	border: 1px solid #48aed9;
 }
 
 @-webkit-keyframes shake {
