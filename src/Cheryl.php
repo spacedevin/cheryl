@@ -292,8 +292,8 @@ class Cheryl {
 
 	public function _login() {
 		$user = User::login(
-			Cheryl::me()->tipsy()->request()->request()['__username'],
-			Cheryl::me()->tipsy()->request()->request()['__password']
+			Cheryl::me()->tipsy()->request()->request()['username'],
+			Cheryl::me()->tipsy()->request()->request()['password']
 		);
 		if ($user) {
 			$this->user = $user;
