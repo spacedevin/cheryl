@@ -96,7 +96,7 @@ class Cheryl {
 		$this->tipsy()->service('Auth', function() use ($self) {
 			$service = [
 				// set readonly to true if a readonly page should have access
-				check => function($readonly = false) use ($self) {
+				check => function($readonly = false, $permission = null) use ($self) {
 					if (!$self->authed && (($readonly && !$self->config['readonly']) || (!$readonly))) {
 						$res = false;
 					} else {
@@ -179,12 +179,36 @@ class Cheryl {
 			->post('ul', function() use ($self) {
 				$self->_takeFile();
 			})
-			->get('vw', function() use ($self) {
-				$self->_getFile(false);
+			->get('vw', function($Auth) use ($self) {
+				$Auth->check(true);
+
+				if (!$self->requestDir) {
+					http_response_code(404);
+					return;
+				}
+
+				// true will force a download
+				$self->storageAdapter()->getFile($self->requestDir, false);
 			})
-			->get('rm', function() use ($self) {
-				$self->_deleteFile();
+
+			->get('rm', function($Auth) use ($self) {
+				$Auth->check(false);
+
+				if ($self->config['readonly'] || !$self->user->permission('delete', $self->requestDir)) {
+					echo json_encode([
+						'status' => false,
+						'message' => 'no permission'
+					]);
+					exit;
+				}
+
+				$status = $self->storageAdapter()->deleteFile($self->requestDir);
+
+				echo json_encode([
+					'status' => $status
+				]);
 			})
+
 			->get('rn', function() use ($self) {
 				$self->_renameFile();
 			})
@@ -264,11 +288,6 @@ class Cheryl {
 			} elseif(file_exists('/usr/bin/identify')) {
 				$this->features->imcli = '/usr/bin/identify';
 			}
-		}
-
-		$stat = intval(trim(shell_exec('stat -f %B '.escapeshellarg(__FILE__))));
-		if ($stat && intval(filemtime(__FILE__)) != $stat) {
-			$this->features->ctime = true;
 		}
 	}
 
@@ -351,11 +370,6 @@ class Cheryl {
 		}
 	}
 
-
-	public function _cTime($file) {
-		return (int)trim(shell_exec('stat -f %B '.escapeshellarg($file->getPathname())));
-	}
-
 	public function _takeFile() {
 		if (!$this->authed) {
 			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
@@ -371,41 +385,6 @@ class Cheryl {
 		}
 
 		echo json_encode(array('status' => true));
-	}
-
-	public function _deleteFile() {
-		if (!$this->authed) {
-			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
-			exit;
-		}
-		if ($this->config['readonly'] || !$this->user->permission('delete', $this->requestDir)) {
-			echo json_encode(array('status' => false, 'message' => 'no permission'));
-			exit;
-		}
-
-		$status = false;
-
-		if (is_dir($this->requestDir)) {
-			if ($this->config['recursiveDelete']) {
-				foreach(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($this->requestDir), \RecursiveIteratorIterator::CHILD_FIRST) as $path) {
-					if ($path->getFilename() == '.' || $path->getFilename() == '..') {
-						continue;
-					}
-					$path->isFile() ? unlink($path->getPathname()) : rmdir($path->getPathname());
-				}
-			}
-
-			if (rmdir($this->requestDir)) {
-				$status = true;
-			}
-
-		} else {
-			if (unlink($this->requestDir)) {
-				$status = true;
-			}
-		}
-
-		echo json_encode(array('status' => $status));
 	}
 
 	public function _renameFile() {

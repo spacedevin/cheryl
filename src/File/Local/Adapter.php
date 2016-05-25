@@ -2,10 +2,18 @@
 
 namespace Cheryl\File\Local;
 
+use \Cheryl\Cheryl;
+
 class Adapter {
 
 	public function __construct() {
-		$this->_root = \Cheryl\Cheryl::me()->config['root'];
+		$this->_root = Cheryl::me()->config['root'];
+
+		$stat = intval(trim(shell_exec('stat -f %B '.escapeshellarg(__FILE__))));
+		if ($stat && intval(filemtime(__FILE__)) != $stat) {
+			Cheryl::me()->features->ctime = true;
+		}
+
 	}
 
 	public function ls($dir, $filters = []) {
@@ -70,7 +78,7 @@ class Adapter {
 			);
 
 			if ($this->features->ctime) {
-				$info['ctime'] = $this->_cTime($file);
+				$info['ctime'] = $this->cTime($file);
 			}
 
 			if ($extended) {
@@ -278,6 +286,36 @@ class Adapter {
 		}
 		fclose($fp);
 		exit;
+	}
+
+	public function cTime($file) {
+		return (int)trim(shell_exec('stat -f %B '.escapeshellarg($file->getPathname())));
+	}
+
+	public function deleteFile($file) {
+		$status = false;
+
+		if (is_dir($file)) {
+			if ($this->config['recursiveDelete']) {
+				foreach(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($file), \RecursiveIteratorIterator::CHILD_FIRST) as $path) {
+					if ($path->getFilename() == '.' || $path->getFilename() == '..') {
+						continue;
+					}
+					$path->isFile() ? unlink($path->getPathname()) : rmdir($path->getPathname());
+				}
+			}
+
+			if (rmdir($file)) {
+				$status = true;
+			}
+
+		} else {
+			if (is_writable($file) && unlink($file)) {
+				$status = true;
+			}
+		}
+
+		return $status;
 	}
 
 }
