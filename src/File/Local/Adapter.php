@@ -318,4 +318,14 @@ class Adapter {
 		return $status;
 	}
 
+	public function saveFile($file, $c) {
+		if (@file_put_contents($file, $c)) {
+			$status = true;
+		} else {
+			$status = false;
+		}
+
+		return $status;
+	}
+
 }

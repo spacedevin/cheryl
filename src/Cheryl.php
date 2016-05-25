@@ -129,19 +129,31 @@ class Cheryl {
 
 		$self->tipsy()
 			->get('logout', function() use ($self) {
-				$self->_logout();
+				@session_destroy();
+				@session_regenerate_id();
+				@session_start();
+
 				echo json_encode([
 					'status' => true,
 					'message' => 'logged out'
 				]);
 			})
+
 			->post('login', function() use ($self) {
-				$res = $self->_login();
-				if ($res) {
+				$user = User::login(
+					$self->tipsy()->request()->request()['username'],
+					$self->tipsy()->request()->request()['password']
+				);
+
+				if ($user) {
+					$self->user = $user;
+					$self->authed = $_SESSION['cheryl-authed'] = true;
+					$_SESSION['cheryl-username'] = $self->user->username;
 					echo json_encode([
 						'status' => true,
 						'message' => 'logged in'
 					]);
+
 				} else {
 					echo json_encode([
 						'status' => false,
@@ -149,8 +161,13 @@ class Cheryl {
 					]);
 				}
 			})
+
 			->get('config', function() use ($self) {
-				$self->_getConfig();
+				echo json_encode([
+					'status' => true,
+					'authed' => $self->authed,
+					'user' => $self->user ? $self->user->exports() : ''
+				]);
 			})
 
 			->get('ls', function($Auth) use ($self) {
@@ -173,12 +190,13 @@ class Cheryl {
 					return;
 				}
 
-				// true will force a download
 				$self->storageAdapter()->getFile($self->requestDir, true);
 			})
+
 			->post('ul', function() use ($self) {
 				$self->_takeFile();
 			})
+
 			->get('vw', function($Auth) use ($self) {
 				$Auth->check(true);
 
@@ -187,7 +205,6 @@ class Cheryl {
 					return;
 				}
 
-				// true will force a download
 				$self->storageAdapter()->getFile($self->requestDir, false);
 			})
 
@@ -212,12 +229,29 @@ class Cheryl {
 			->get('rn', function() use ($self) {
 				$self->_renameFile();
 			})
+
 			->get('mk', function() use ($self) {
 				$self->_makeFile();
 			})
-			->get('sv', function() use ($self) {
-				$self->_saveFile();
+
+			->post('sv', function($Auth) use ($self) {
+				$Auth->check(false);
+
+				if ($self->config['readonly'] || !$self->user->permission('save', $self->requestDir)) {
+					echo json_encode([
+						'status' => false,
+						'message' => 'no permission'
+					]);
+					exit;
+				}
+
+				$status = $self->storageAdapter()->saveFile($self->requestDir, $this->request['c']);
+
+				echo json_encode([
+					'status' => $status
+				]);
 			})
+
 			->otherwise(function($View) {
 				$View->display('cheryl');
 			});
@@ -307,28 +341,6 @@ class Cheryl {
 			$this->user = new User($_SESSION['cheryl-username']);
 			return $this->authed = true;
 		}
-	}
-
-	public function _login() {
-		$user = User::login(
-			Cheryl::me()->tipsy()->request()->request()['username'],
-			Cheryl::me()->tipsy()->request()->request()['password']
-		);
-		if ($user) {
-			$this->user = $user;
-			$this->authed = $_SESSION['cheryl-authed'] = true;
-			$_SESSION['cheryl-username'] = $this->user->username;
-			return true;
-
-		} else {
-			return false;
-		}
-	}
-
-	public function _logout() {
-		@session_destroy();
-		@session_regenerate_id();
-		@session_start();
 	}
 
 	public function _digestRequest() {
@@ -423,33 +435,6 @@ class Cheryl {
 		}
 
 		echo json_encode(array('status' => $status, 'name' => $this->requestName));
-	}
-
-	public function _saveFile() {
-		if (!$this->authed) {
-			echo json_encode(array('status' => false, 'message' => 'not authenticated'));
-			exit;
-		}
-		if ($this->config['readonly'] || !$this->user->permission('save', $this->requestDir)) {
-			echo json_encode(array('status' => false, 'message' => 'no permission'));
-			exit;
-		}
-
-		if (@file_put_contents($this->requestDir,$this->request['c'])) {
-			$status = true;
-		} else {
-			$status = false;
-		}
-
-		echo json_encode(array('status' => $status));
-	}
-
-	public function _getConfig() {
-		echo json_encode([
-			'status' => true,
-			'authed' => $this->authed,
-			'user' => $this->user ? $this->user->exports() : ''
-		]);
 	}
 
 	public static function iteratorFilter($current) {
