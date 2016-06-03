@@ -155,7 +155,7 @@ class Cheryl {
 				$self->_saveFile();
 			})
 			->otherwise(function($View) {
-				$View->display('cheryl');
+				$View->display('cheryl', ['path' => str_replace('index.php','', $_SERVER['PHP_SELF'])]);
 			});
 
 		$this->tipsy()->run();

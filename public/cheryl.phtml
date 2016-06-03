@@ -1,14 +1,14 @@
 <!DOCTYPE HTML>
 <html ng-app="Cheryl">
-	<base href="/">
+	<base href="<?=$path?>">
 	<head>
 		<title>Cheryl</title>
-		<link rel="shortcut icon" href="/icon.png">
-		<link rel="apple-touch-icon-precomposed" href="/icon.png">
+		<link rel="shortcut icon" href="<?=$path?>icon.png">
+		<link rel="apple-touch-icon-precomposed" href="<?=$path?>icon.png">
 
 		<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
 		<link href="https://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700,800" rel="stylesheet">
-		<link href="/cheryl.css" rel="stylesheet">
+		<link href="<?=$path?>cheryl.css" rel="stylesheet">
 
 	</head>
 	<body ng-controller="RootCtrl" ng-class="{'modal-enabled': dialog, 'global-error': (dialog && dialog.type == 'error'), 'fullscreen-editor': fullscreenEdit}" ng-body ng-drop-upload>
@@ -188,6 +188,6 @@
 	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.min.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-route.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.1.01/ace.js"></script>
-	<script src="/cheryl.js"></script>
+	<script src="<?=$path?>cheryl.js"></script>
 
 </html>
