@@ -21,9 +21,3 @@ Deploying on Heroku will use Nginx and Postgres.
 1. Ensure your **files** directory is chmod to 0777 if using localy stored files
 1. Point your web root to the **public** directory
 1. Login with your user/pass. Default is u: **admin**, p: **password**.
-
-
----
-<a target='_blank' rel='nofollow' href='https://app.codesponsor.io/link/sn2NAgmpU7HDrFX8aRX5HKQH/arzynik/cheryl'>
-  <img alt='Sponsor' width='888' height='68' src='https://app.codesponsor.io/embed/sn2NAgmpU7HDrFX8aRX5HKQH/arzynik/cheryl.svg' />
-</a>
