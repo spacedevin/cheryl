@@ -55,7 +55,7 @@ var Cheryl =
 		};
 
 		$scope.login = function() {
-			$http.post($scope.path(), {'__p': 'login', '__username': $scope.user.username, '__password': $scope.user.password}).
+			$http.post($scope.path(), {'__p': 'login', 'username': $scope.user.username, 'password': $scope.user.password}).
 				success(function(data) {
 					if (data.status) {
 						$scope.welcome = $scope.welcomeDefault;
